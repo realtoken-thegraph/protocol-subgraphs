@@ -9,15 +9,7 @@ The Aave Protocol subgraphs index data from the protocol smart contracts, and ex
 
  
 ## Active deployments
--  [ETH Mainnet V2](https://thegraph.com/hosted-service/subgraph/aave/protocol-v2)
--  [Polygon V2](https://thegraph.com/hosted-service/subgraph/aave/aave-v2-matic)
--  [Avalanche V2](https://thegraph.com/hosted-service/subgraph/aave/protocol-v2-avalanche)
--  [Polygon V3](https://thegraph.com/hosted-service/subgraph/aave/protocol-v3-polygon)
--  [Avalanche V3](https://thegraph.com/hosted-service/subgraph/aave/protocol-v3-avalanche)
--  [Arbitrum V3](https://thegraph.com/hosted-service/subgraph/aave/protocol-v3-arbitrum)
--  [Optimism V3](https://thegraph.com/hosted-service/subgraph/aave/protocol-v3-optimism)
--  [Fantom V3](https://thegraph.com/hosted-service/subgraph/aave/protocol-v3-fantom)
--  [Harmony V3](https://thegraph.com/hosted-service/subgraph/aave/protocol-v3-harmony)
+-  [Gnosis Chain V2](https://thegraph.com/hosted-service/subgraph/realtoken-thegraph/rmm-realt)
 
 
 ## Usage

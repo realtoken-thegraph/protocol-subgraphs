@@ -1,37 +1,18 @@
 {
   "name": "protocol-subgraphs",
   "version": "1.0.0",
-  "description": "This package contains subgraphs of the Aave protocol v2 and v3",
+  "description": "This package contains subgraphs of the Aave protocol v2",
   "scripts": {
     "generate:schema": "cp ./schemas/${VERSION}.schema.graphql  schema.graphql",
     "prepare:subgraph": "mustache ./config/${NETWORK}-${VERSION}.json ./templates/${BLOCKCHAIN}.subgraph.template.yaml > subgraph.yaml && rm -rf generated && npm run generate:schema && npm run subgraph:codegen && npm run subgraph:build",
     "subgraph:codegen": "graph codegen --output-dir ./generated",
     "subgraph:build": "graph build",
     "subgraph:deploy:hosted": "graph deploy $SLUG --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/ --access-token $ACCESS_TOKEN",
-    "deploy:hosted:kovan": "VERSION=v2 BLOCKCHAIN=ethereum NETWORK=kovan env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v2-kovan env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:mainnet": "VERSION=v2 BLOCKCHAIN=ethereum NETWORK=mainnet env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v2 env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:matic": "VERSION=v2 BLOCKCHAIN=matic NETWORK=matic env-cmd npm run prepare:subgraph && SLUG=aave/aave-v2-matic env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:mumbai": "VERSION=v2 BLOCKCHAIN=matic NETWORK=mumbai env-cmd npm run prepare:subgraph && SLUG=aave/aave-v2-polygon-mumbai env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:fuji": "VERSION=v2 BLOCKCHAIN=avalanche NETWORK=fuji env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v2-fuji env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:avalanche": "VERSION=v2 BLOCKCHAIN=avalanche NETWORK=avalanche env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v2-avalanche env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:arbitrum-rinkeby": "VERSION=v3 BLOCKCHAIN=v3 NETWORK=arbitrum-rinkeby env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v3-arbitrum-rinkeby env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:arbitrum-v3": "VERSION=v3 BLOCKCHAIN=v3 NETWORK=arbitrum env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v3-arbitrum env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:fantom-v3": "VERSION=v3 BLOCKCHAIN=v3 NETWORK=fantom env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v3-fantom env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:fantom-testnet": "VERSION=v3 BLOCKCHAIN=v3 NETWORK=fantom-testnet env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v3-arbitrum env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:optimism-v3": "VERSION=v3 BLOCKCHAIN=v3 NETWORK=optimism env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v3-optimism env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:optimism-kovan": "VERSION=v3 BLOCKCHAIN=v3 NETWORK=optimism-kovan env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v3-optimism-kovan env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:harmony-v3": "VERSION=v3 BLOCKCHAIN=v3 NETWORK=harmony env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v3-harmony env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:mainnet-arc": "VERSION=v2-arc BLOCKCHAIN=ethereum-arc NETWORK=mainnet env-cmd npm run prepare:subgraph && SLUG=aave/aave-arc env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:mainnet-centrifuge": "VERSION=v2-centrifuge BLOCKCHAIN=ethereum-arc NETWORK=mainnet env-cmd npm run prepare:subgraph && SLUG=aave/aave-centrifuge env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:polygon-v3": "VERSION=v3 BLOCKCHAIN=v3 NETWORK=polygon env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v3-polygon env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:mumbai-v3": "VERSION=v3 BLOCKCHAIN=v3 NETWORK=mumbai env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v3-polygon-mumbai env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:fuji-v3": "VERSION=v3 BLOCKCHAIN=v3 NETWORK=fuji env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v3-fuji env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:avalanche-v3": "VERSION=v3 BLOCKCHAIN=v3 NETWORK=avalanche env-cmd npm run prepare:subgraph && SLUG=aave/protocol-v3-avalanche env-cmd npm run subgraph:deploy:hosted",
-    "deploy:hosted:v3": "npm run deploy:hosted:avalanche-v3 && npm run deploy:hosted:polygon-v3 && npm run deploy:hosted:optimism-v3 && npm run deploy:hosted:fantom-v3 && npm run deploy:hosted:arbitrum-v3 && npm run deploy:hosted:harmony-v3"
+    "deploy:hosted:gnosis": "VERSION=v2 BLOCKCHAIN=gnosis NETWORK=gnosis env-cmd npm run prepare:subgraph && SLUG=realtoken-thegraph/rmm-realt env-cmd npm run subgraph:deploy:hosted"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/aave/protocol-subgraphs"
+    "url": "https://github.com/realtoken-thegraph/protocol-subgraphs"
   },
   "author": "AAVE <tech@aave.com>",
   "contributors": [

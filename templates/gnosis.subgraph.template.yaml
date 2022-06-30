@@ -24,13 +24,11 @@ dataSources:
         - PriceOracleAsset
       abis:
         - name: AaveOracle
-          file: ./abis/v2-permissioned/AaveOracle.json
+          file: ./abis/v2/AaveOracle.json
         - name: GenericOracleI
           file: ./abis/v2/GenericOracleI.json
         - name: IExtendedPriceAggregator
           file: ./abis/helpers/IExtendedPriceAggregator.json
-        - name: IERC20Detailed
-          file: ./abis/helpers/IERC20Detailed.json
         - name: EACAggregatorProxy
           file: ./abis/helpers/EACAggregatorProxy.json
       eventHandlers:
@@ -38,68 +36,19 @@ dataSources:
           handler: handleAssetSourceUpdated
         - event: FallbackOracleUpdated(indexed address)
           handler: handleFallbackOracleUpdated
-        - event: BaseCurrencySet(indexed address,uint256)
-          handler: handleBaseCurrencySet
-      file: src/mapping/proxy-price-provider/ethereum-arc.ts
-
-  - kind: ethereum/contract
-    name: ChainlinkENSResolver
-    network: {{network}}
-    source:
-      address: '{{ChainlinkENSResolver}}'
-      startBlock: {{ChainlinkENSResolverBlock}}
-      abi: ChainlinkENSResolver
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.6
-      language: wasm/assemblyscript
-      entities:
-        - ENS
-      abis:
-        - name: ChainlinkENSResolver
-          file: ./abis/helpers/ENSResolverChainlink.json
-        - name: IExtendedPriceAggregator
-          file: ./abis/helpers/IExtendedPriceAggregator.json
-        - name: AaveOracle
-          file: ./abis/v2/AaveOracle.json
-      eventHandlers:
-        - event: AddrChanged(indexed bytes32,address)
-          handler: handleAddressesChanged
-      file: src/mapping/ens-chainlink.ts
+        - event: WethSet(indexed address)
+          handler: handleWethSet
+      file: src/mapping/proxy-price-provider/gnosis.ts
   # --------------------------------------
-  #             PERMISSIONS
+  #           CONFIGURATIONS
   # --------------------------------------
   - kind: ethereum/contract
-    name: PermissionManager
+    name: LendingPoolAddressesProviderRegistry
     network: {{network}}
     source:
-      address: '{{PermissionManagerAddress}}'
-      abi: PermissionManager
-      startBlock: {{PermissionManagerStartBlock}}
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.6
-      language: wasm/assemblyscript
-      entities:
-        - User
-        - PermissionedRole
-      abis:
-        - name: PermissionManager
-          file: ./abis/v2-permissioned/PermissionManager.json
-      eventHandlers:
-        - event: RoleSet(indexed address,indexed uint256,indexed address,bool)
-          handler: handleRoleSet
-      file: src/mapping/permissioned/permissioned-manager.ts
-  # --------------------------------------
-  #       CONFIGURATIONS
-  # --------------------------------------
-  - kind: ethereum/contract
-    name: LendingPoolAddressesProvider
-    network: {{network}}
-    source:
-      address: '{{LendingPoolAddressesProviderAddress}}'
-      abi: LendingPoolAddressesProvider
-      startBlock: {{LendingPoolAddressesProviderStartBlock}}
+      address: '{{LendingPoolAddressesProviderRegistryAddress}}'
+      abi: LendingPoolAddressesProviderRegistry
+      startBlock: {{LendingPoolAddressesProviderRegistryStartBlock}}
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -107,32 +56,43 @@ dataSources:
       entities:
         - LendingPoolAddressesProvider
       abis:
-        - name: LendingPoolAddressesProvider
-          file: ./abis/v2/LendingPoolAddressesProvider.json
+        - name: LendingPoolAddressesProviderRegistry
+          file: ./abis/v2/LendingPoolAddressesProviderRegistry.json
       eventHandlers:
-        - event: ProxyCreated(bytes32,indexed address)
-          handler: handleProxyCreated
-        - event: PriceOracleUpdated(indexed address)
-          handler: handlePriceOracleUpdated
-        - event: LendingRateOracleUpdated(indexed address)
-          handler: handleLendingRateOracleUpdated
-        - event: LendingPoolUpdated(indexed address)
-          handler: handleLendingPoolUpdated
-        - event: LendingPoolConfiguratorUpdated(indexed address)
-          handler: handleLendingPoolConfiguratorUpdated
-        - event: LendingPoolCollateralManagerUpdated(indexed address)
-          handler: handleLendingPoolCollateralManagerUpdated
-        - event: ConfigurationAdminUpdated(indexed address) # past aaveadminupdated todo: change
-          handler: handleConfigurationAdminUpdated
-        - event: EmergencyAdminUpdated(indexed address) #new
-          handler: handleEmergencyAdminUpdated
-        # - event: EthereumAddressUpdated(indexed address) #new
-        #   handler: handleEthereumAddressUpdated
-        # - event: OwnershipTransferred(indexed address,indexed address) #new
-        #   handler: handleOwnershipTransferred
-        - event: AddressSet(bytes32,indexed address,bool) #new
-          handler: handleAddressSet
-      file: src/mapping/lending-pool-address-provider/ethereum-arc.ts
+        - event: AddressesProviderRegistered(indexed address)
+          handler: handleAddressesProviderRegistered
+        - event: AddressesProviderUnregistered(indexed address)
+          handler: handleAddressesProviderUnregistered
+      file: src/mapping/address-provider-registry/address-provider-registry.ts
+  # --------------------------------------
+  #             CHAINLINK
+  # --------------------------------------
+  - kind: ethereum/contract
+    name: ChainlinkSourcesRegistry
+    network: {{network}}
+    source:
+      address: '{{ChainlinkSourcesRegistryAddress}}'
+      startBlock: {{ChainlinkSourcesRegistryStartBlock}}
+      abi: ChainlinkSourcesRegistry
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - PriceOracle
+      abis:
+        - name: ChainlinkSourcesRegistry
+          file: ./abis/helpers/ChainlinkSourcesRegistry.json
+        - name: AaveOracle
+          file: ./abis/v2/AaveOracle.json
+        - name: GenericOracleI
+          file: ./abis/v2/GenericOracleI.json
+        - name: IExtendedPriceAggregator
+          file: ./abis/helpers/IExtendedPriceAggregator.json
+      eventHandlers:
+        - event: AggregatorUpdated(address,address)
+          handler: handleChainlinkAggregatorUpdated
+      file: src/mapping/proxy-price-provider/gnosis.ts
   # --------------------------------------
   #
   # --------------------------------------
@@ -163,6 +123,8 @@ templates:
           handler: handleAssetConfigUpdated
         - event: RewardsAccrued(indexed address,uint256)
           handler: handleRewardsAccrued
+        - event: RewardsClaimed(indexed address,indexed address,uint256)
+          handler: handleRewardsClaimed
         - event: RewardsClaimed(indexed address,indexed address,indexed address,uint256)
           handler: handleRewardsClaimedClaimer
         - event: AssetIndexUpdated(indexed address,uint256)
@@ -171,7 +133,7 @@ templates:
           handler: handleUserIndexUpdated
         - event: DistributionEndUpdated(uint256)
           handler: handleDistributionEndUpdated
-      file: src/mapping/incentives-controller/ethereum.ts
+      file: src/mapping/incentives-controller/gnosis.ts
   # --------------------------------------
   #      ORACLES / PRICE PROVIDERS
   # --------------------------------------
@@ -190,8 +152,6 @@ templates:
       abis:
         - name: GenericOracleI
           file: ./abis/v2/GenericOracleI.json
-        - name: AaveOracle
-          file: ./abis/v2/AaveOracle.json
       eventHandlers:
         - event: AssetPriceUpdated(address,uint256,uint256)
           handler: handleAssetPriceUpdated
@@ -408,7 +368,7 @@ templates:
           handler: handleStableDebtTokenUpgraded
         - event: VariableDebtTokenUpgraded(indexed address,indexed address,indexed address)
           handler: handleVariableDebtTokenUpgraded
-      file: src/mapping/lending-pool-configurator/ethereum.ts
+      file: src/mapping/lending-pool-configurator/gnosis.ts
   - kind: ethereum/contract
     name: LendingPool
     network: {{network}}
