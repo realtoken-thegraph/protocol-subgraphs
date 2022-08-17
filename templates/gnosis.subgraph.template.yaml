@@ -5,6 +5,31 @@ schema:
   file: ./schema.graphql
 dataSources:
   # --------------------------------------
+  #      INDEX AS SOON AS POSSIBLE
+  # --------------------------------------
+  - name: AdminUpgradeabilityProxy
+    kind: ethereum/contract
+    network: xdai
+    source:
+      abi: AdminUpgradeabilityProxy
+      address: "0xa17950c9910e28cae535f43d0c87a6c6cb2f5216"
+      startBlock: 11720224
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/mapping/registry.ts
+      entities:
+        - ChainlinkAggregator
+        - PriceOracle
+        - PriceOracleAsset
+      abis:
+        - name: AdminUpgradeabilityProxy
+          file: ./abis/AdminUpgradeabilityProxy.json
+      eventHandlers:
+        - event: 'OwnershipTransferred(indexed address,indexed address)'
+          handler: initRegistry
+  # --------------------------------------
   #      ORACLES / PRICE PROVIDERS
   # --------------------------------------
   - kind: ethereum/contract

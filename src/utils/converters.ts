@@ -123,7 +123,7 @@ export function byteArrayFromHex(s: string): ByteArray {
     throw new TypeError('Hex string must have an even number of characters');
   }
   let out = new Uint8Array(s.length / 2);
-  for (var i = 0; i < s.length; i += 2) {
+  for (let i = 0; i < s.length; i += 2) {
     out[i / 2] = parseInt(s.substring(i, i + 2), 16) as u32;
   }
 
