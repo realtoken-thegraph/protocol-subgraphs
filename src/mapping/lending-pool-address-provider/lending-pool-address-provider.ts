@@ -15,7 +15,7 @@ import {
   LendingPool as LendingPoolContract,
   LendingPoolConfigurator as LendingPoolConfiguratorContract,
 } from '../../../generated/templates';
-import { createMapContractToPool, getOrInitPriceOracle } from '../../helpers/initializers';
+import { createMapContractToPool /*, getOrInitPriceOracle*/ } from '../../helpers/initializers';
 import { Pool, PoolConfigurationHistoryItem } from '../../../generated/schema';
 import { getHistoryEntityId } from '../../utils/id-generation';
 
@@ -124,10 +124,10 @@ export function handlePriceOracleUpdated(event: PriceOracleUpdated): void {
   genericAddressProviderUpdate('proxyPriceProvider', event.params.newAddress, event, false);
 
   // TODO: should be more general
-  let priceOracle = getOrInitPriceOracle();
-  //if (priceOracle.proxyPriceProvider.equals(zeroAddress())) {
-  priceOracle.proxyPriceProvider = event.params.newAddress;
-  priceOracle.save();
+  // let priceOracle = getOrInitPriceOracle();
+  // if (priceOracle.proxyPriceProvider.equals(zeroAddress())) {
+  // priceOracle.proxyPriceProvider = event.params.newAddress;
+  // priceOracle.save();
   //}
 }
 

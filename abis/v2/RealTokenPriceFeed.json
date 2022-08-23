@@ -1,0 +1,367 @@
+[
+  {
+    "type": "constructor",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "type": "address", "name": "admin", "internalType": "address" },
+      { "type": "address", "name": "oracle_", "internalType": "address" },
+      { "type": "address", "name": "linktoken_", "internalType": "address" },
+      { "type": "string", "name": "jobId_", "internalType": "string" },
+      { "type": "uint256", "name": "fee_", "internalType": "uint256" },
+      { "type": "int256", "name": "multiFactor_", "internalType": "int256" },
+      { "type": "string[2]", "name": "apiUrl_", "internalType": "string[2]" },
+      { "type": "string[2]", "name": "apiPath_", "internalType": "string[2]" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ApiPathUpdated",
+    "inputs": [
+      {
+        "type": "string[2]",
+        "name": "newApiPath",
+        "internalType": "string[2]",
+        "indexed": true
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ApiUrlUpdated",
+    "inputs": [
+      {
+        "type": "string[2]",
+        "name": "newApiUrl",
+        "internalType": "string[2]",
+        "indexed": true
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ChainlinkCancelled",
+    "inputs": [
+      {
+        "type": "bytes32",
+        "name": "id",
+        "internalType": "bytes32",
+        "indexed": true
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ChainlinkFulfilled",
+    "inputs": [
+      {
+        "type": "bytes32",
+        "name": "id",
+        "internalType": "bytes32",
+        "indexed": true
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ChainlinkRequested",
+    "inputs": [
+      {
+        "type": "bytes32",
+        "name": "id",
+        "internalType": "bytes32",
+        "indexed": true
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FeeUpdated",
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "newFee",
+        "internalType": "uint256",
+        "indexed": true
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "JobIdUpdated",
+    "inputs": [
+      {
+        "type": "string",
+        "name": "newJobId",
+        "internalType": "string",
+        "indexed": true
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MultiFactorUpdated",
+    "inputs": [
+      {
+        "type": "int256",
+        "name": "newMultiFactor",
+        "internalType": "int256",
+        "indexed": true
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OracleUpdated",
+    "inputs": [
+      {
+        "type": "address",
+        "name": "newOracle",
+        "internalType": "address",
+        "indexed": true
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PriceMismatched",
+    "inputs": [
+      {
+        "type": "string",
+        "name": "message",
+        "internalType": "string",
+        "indexed": false
+      },
+      {
+        "type": "uint256",
+        "name": "firstPrice",
+        "internalType": "uint256",
+        "indexed": false
+      },
+      {
+        "type": "uint256",
+        "name": "secondPrice",
+        "internalType": "uint256",
+        "indexed": false
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PriceUpdated",
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "newPrice",
+        "internalType": "uint256",
+        "indexed": true
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RequestRealTokenPriceFulfilled",
+    "inputs": [
+      {
+        "type": "bytes32",
+        "name": "requestId",
+        "internalType": "bytes32",
+        "indexed": true
+      },
+      {
+        "type": "uint256",
+        "name": "price",
+        "internalType": "uint256",
+        "indexed": true
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "function",
+    "stateMutability": "view",
+    "outputs": [{ "type": "uint256", "name": "", "internalType": "uint256" }],
+    "name": "fee",
+    "inputs": []
+  },
+  {
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "outputs": [],
+    "name": "fulfillRealTokenPrice",
+    "inputs": [
+      { "type": "bytes32", "name": "_requestId", "internalType": "bytes32" },
+      { "type": "uint256", "name": "_price", "internalType": "uint256" }
+    ]
+  },
+  {
+    "type": "function",
+    "stateMutability": "view",
+    "outputs": [
+      { "type": "string[2]", "name": "", "internalType": "string[2]" }
+    ],
+    "name": "getApiPath",
+    "inputs": []
+  },
+  {
+    "type": "function",
+    "stateMutability": "view",
+    "outputs": [
+      { "type": "string[2]", "name": "", "internalType": "string[2]" }
+    ],
+    "name": "getApiUrl",
+    "inputs": []
+  },
+  {
+    "type": "function",
+    "stateMutability": "view",
+    "outputs": [{ "type": "bytes32", "name": "", "internalType": "bytes32" }],
+    "name": "getRoleAdmin",
+    "inputs": [{ "type": "bytes32", "name": "role", "internalType": "bytes32" }]
+  },
+  {
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "outputs": [],
+    "name": "grantRole",
+    "inputs": [
+      { "type": "bytes32", "name": "role", "internalType": "bytes32" },
+      { "type": "address", "name": "account", "internalType": "address" }
+    ]
+  },
+  {
+    "type": "function",
+    "stateMutability": "view",
+    "outputs": [{ "type": "bool", "name": "", "internalType": "bool" }],
+    "name": "hasRole",
+    "inputs": [
+      { "type": "bytes32", "name": "role", "internalType": "bytes32" },
+      { "type": "address", "name": "account", "internalType": "address" }
+    ]
+  },
+  {
+    "type": "function",
+    "stateMutability": "view",
+    "outputs": [{ "type": "string", "name": "", "internalType": "string" }],
+    "name": "jobId",
+    "inputs": []
+  },
+  {
+    "type": "function",
+    "stateMutability": "view",
+    "outputs": [{ "type": "int256", "name": "", "internalType": "int256" }],
+    "name": "latestAnswer",
+    "inputs": []
+  },
+  {
+    "type": "function",
+    "stateMutability": "view",
+    "outputs": [{ "type": "int256", "name": "", "internalType": "int256" }],
+    "name": "multiFactor",
+    "inputs": []
+  },
+  {
+    "type": "function",
+    "stateMutability": "view",
+    "outputs": [{ "type": "address", "name": "", "internalType": "address" }],
+    "name": "oracle",
+    "inputs": []
+  },
+  {
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "outputs": [],
+    "name": "renounceRole",
+    "inputs": [
+      { "type": "bytes32", "name": "role", "internalType": "bytes32" },
+      { "type": "address", "name": "account", "internalType": "address" }
+    ]
+  },
+  {
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "outputs": [],
+    "name": "revokeRole",
+    "inputs": [
+      { "type": "bytes32", "name": "role", "internalType": "bytes32" },
+      { "type": "address", "name": "account", "internalType": "address" }
+    ]
+  },
+  {
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "outputs": [],
+    "name": "setApiPath",
+    "inputs": [
+      { "type": "string[2]", "name": "apiPath_", "internalType": "string[2]" }
+    ]
+  },
+  {
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "outputs": [],
+    "name": "setApiUrl",
+    "inputs": [
+      { "type": "string[2]", "name": "apiUrl_", "internalType": "string[2]" }
+    ]
+  },
+  {
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "outputs": [],
+    "name": "setFee",
+    "inputs": [{ "type": "uint256", "name": "fee_", "internalType": "uint256" }]
+  },
+  {
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "outputs": [],
+    "name": "setJobId",
+    "inputs": [{ "type": "string", "name": "jobId_", "internalType": "string" }]
+  },
+  {
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "outputs": [],
+    "name": "setMultiFactor",
+    "inputs": [
+      { "type": "int256", "name": "multiFactor_", "internalType": "int256" }
+    ]
+  },
+  {
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "outputs": [],
+    "name": "setOracle",
+    "inputs": [
+      { "type": "address", "name": "oracle_", "internalType": "address" }
+    ]
+  },
+  {
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "outputs": [],
+    "name": "updatePrice",
+    "inputs": []
+  },
+  {
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "outputs": [],
+    "name": "withdrawLink",
+    "inputs": [
+      { "type": "address", "name": "recepient_", "internalType": "address" },
+      { "type": "uint256", "name": "amount_", "internalType": "uint256" }
+    ]
+  }
+]

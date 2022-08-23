@@ -23,7 +23,7 @@ type PoolConfigurationHistoryItem @entity {
   lendingPoolConfiguratorImpl: Bytes
   lendingPoolImpl: Bytes
   lendingPoolConfigurator: Bytes
-  proxyPriceProvider: Bytes
+  # proxyPriceProvider: Bytes
   lendingRateOracle: Bytes
   configurationAdmin: Bytes
   timestamp: Int!
@@ -37,7 +37,7 @@ type Pool @entity {
   lendingPoolConfiguratorImpl: Bytes
   lendingPoolImpl: Bytes
   lendingPoolConfigurator: Bytes
-  proxyPriceProvider: Bytes
+  # proxyPriceProvider: Bytes
   lendingRateOracle: Bytes
   configurationAdmin: Bytes
   ethereumAddress: Bytes
@@ -61,79 +61,79 @@ type Pool @entity {
   paused: Boolean!
 }
 
-type PriceHistoryItem @entity {
-  id: ID!
-  asset: PriceOracleAsset!
-  price: BigInt!
-  timestamp: Int!
-}
+# type PriceHistoryItem @entity {
+#   id: ID!
+#   asset: PriceOracleAsset!
+#   price: BigInt!
+#   timestamp: Int!
+# }
 
-type UsdEthPriceHistoryItem @entity {
-  id: ID!
-  oracle: PriceOracle!
-  price: BigInt!
-  timestamp: Int!
-}
+# type UsdEthPriceHistoryItem @entity {
+#   id: ID!
+#   oracle: PriceOracle!
+#   price: BigInt!
+#   timestamp: Int!
+# }
 
-type ChainlinkENS @entity {
-  "id is the node hash"
-  id: ID!
-  "address of the aggregator"
-  aggregatorAddress: Bytes!
-  "token address represented with this aggregator"
-  underlyingAddress: Bytes!
-  "symbol of the token represented on the aggregator"
-  symbol: String!
-}
+# type ChainlinkENS @entity {
+#   "id is the node hash"
+#   id: ID!
+#   "address of the aggregator"
+#   aggregatorAddress: Bytes!
+#   "token address represented with this aggregator"
+#   underlyingAddress: Bytes!
+#   "symbol of the token represented on the aggregator"
+#   symbol: String!
+# }
 
-type ChainlinkAggregator @entity {
-  # aggregator address
-  id: ID!
-  oracleAsset: PriceOracleAsset!
-}
+# type ChainlinkAggregator @entity {
+#   # aggregator address
+#   id: ID!
+#   oracleAsset: PriceOracleAsset!
+# }
 
-enum PriceOracleAssetType {
-  Simple
-  Composite
-}
+# enum PriceOracleAssetType {
+#   Simple
+#   Composite
+# }
 
-enum PriceOracleAssetPlatform {
-  Simple
-  Uniswap
-}
+# enum PriceOracleAssetPlatform {
+#   Simple
+#   Uniswap
+# }
 
 # TODO: check nomenclature
-type PriceOracleAsset @entity {
-  # underlying asset address
-  id: ID!
-  oracle: PriceOracle!
-  priceInEth: BigInt!
-  priceSource: Bytes!
-  isFallbackRequired: Boolean!
-  type: PriceOracleAssetType!
-  platform: PriceOracleAssetPlatform!
-  dependentAssets: [PriceOracleAsset!]!
-  lastUpdateTimestamp: Int!
-  priceHistory: [PriceHistoryItem!]! @derivedFrom(field: "asset")
-  fromChainlinkSourcesRegistry: Boolean!
-}
+# type PriceOracleAsset @entity {
+#   # underlying asset address
+#   id: ID!
+#   oracle: PriceOracle!
+#   priceInEth: BigInt!
+#   priceSource: Bytes!
+#   isFallbackRequired: Boolean!
+#   type: PriceOracleAssetType!
+#   platform: PriceOracleAssetPlatform!
+#   dependentAssets: [PriceOracleAsset!]!
+#   lastUpdateTimestamp: Int!
+#   priceHistory: [PriceHistoryItem!]! @derivedFrom(field: "asset")
+#   fromChainlinkSourcesRegistry: Boolean!
+# }
 
-type PriceOracle @entity {
-  id: ID!
-  proxyPriceProvider: Bytes!
-  usdPriceEth: BigInt!
-  usdPriceEthMainSource: Bytes!
-  usdPriceEthFallbackRequired: Boolean!
-  usdDependentAssets: [PriceOracleAsset!]!
-  fallbackPriceOracle: Bytes!
-  tokens: [PriceOracleAsset!]! @derivedFrom(field: "oracle")
-  usdPriceEthHistory: [UsdEthPriceHistoryItem!]! @derivedFrom(field: "oracle")
-  tokensWithFallback: [PriceOracleAsset!]!
-  lastUpdateTimestamp: Int!
-  version: Int!
-  baseCurrency: Bytes
-  baseCurrencyUnit: BigInt
-}
+# type PriceOracle @entity {
+#   id: ID!
+#   proxyPriceProvider: Bytes!
+#   usdPriceEth: BigInt!
+#   usdPriceEthMainSource: Bytes!
+#   usdPriceEthFallbackRequired: Boolean!
+#   usdDependentAssets: [PriceOracleAsset!]!
+#   fallbackPriceOracle: Bytes!
+#   tokens: [PriceOracleAsset!]! @derivedFrom(field: "oracle")
+#   usdPriceEthHistory: [UsdEthPriceHistoryItem!]! @derivedFrom(field: "oracle")
+#   tokensWithFallback: [PriceOracleAsset!]!
+#   lastUpdateTimestamp: Int!
+#   version: Int!
+#   baseCurrency: Bytes
+#   baseCurrencyUnit: BigInt
+# }
 
 type SToken @entity {
   """
@@ -398,8 +398,8 @@ type ReserveParamsHistoryItem @entity {
   totalATokenSupply: BigInt!
   totalLiquidityAsCollateral: BigInt!
   availableLiquidity: BigInt!
-  priceInEth: BigInt!
-  priceInUsd: BigDecimal!
+  # priceInEth: BigInt!
+  # priceInUsd: BigDecimal!
   timestamp: Int!
   totalScaledVariableDebt: BigInt!
   totalCurrentVariableDebt: BigInt!
@@ -481,7 +481,7 @@ type Reserve @entity {
   stableBorrowRateEnabled: Boolean! # defalt false
   isActive: Boolean! # defalt false
   isFrozen: Boolean! # defalt false
-  price: PriceOracleAsset!
+  # # price: PriceOracleAsset!
   reserveInterestRateStrategy: Bytes!
   optimalUtilisationRate: BigInt!
   variableRateSlope1: BigInt!

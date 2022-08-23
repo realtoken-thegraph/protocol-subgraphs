@@ -29,8 +29,8 @@ import {
   getOrInitSToken,
   getOrInitVToken,
   getOrInitUser,
-  getPriceOracleAsset,
-  getOrInitPriceOracle,
+  // getPriceOracleAsset,
+  // getOrInitPriceOracle,
   getOrInitReserveParamsHistoryItem,
 } from '../../helpers/initializers';
 import { zeroBI } from '../../utils/converters';
@@ -122,12 +122,12 @@ function saveReserve(reserve: Reserve, event: ethereum.Event): void {
   reserveParamsHistoryItem.liquidityRate = reserve.liquidityRate;
   reserveParamsHistoryItem.totalATokenSupply = reserve.totalATokenSupply;
   reserveParamsHistoryItem.averageStableBorrowRate = reserve.averageStableRate;
-  let priceOracleAsset = getPriceOracleAsset(reserve.price);
-  reserveParamsHistoryItem.priceInEth = priceOracleAsset.priceInEth;
+  // let priceOracleAsset = getPriceOracleAsset(reserve.price);
+  // reserveParamsHistoryItem.priceInEth = priceOracleAsset.priceInEth;
 
   // REMOVED DIV BY 0
-  reserveParamsHistoryItem.priceInUsd = reserveParamsHistoryItem.priceInEth
-    .toBigDecimal();
+  // reserveParamsHistoryItem.priceInUsd = reserveParamsHistoryItem.priceInEth
+  //   .toBigDecimal();
 
   reserveParamsHistoryItem.timestamp = event.block.timestamp.toI32();
   reserveParamsHistoryItem.save();
