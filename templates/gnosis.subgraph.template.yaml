@@ -228,6 +228,8 @@ templates:
         - name: AaveIncentivesController
           file: ./abis/v2/AaveIncentivesController.json
       eventHandlers:
+        - event: BurnAndMintByGovernance(indexed address,indexed address,indexed uint256)
+          handler: handleBurnAndMintByGovernance
         - event: Burn(indexed address,indexed address,uint256,uint256)
           handler: handleATokenBurn
         - event: BalanceTransfer(indexed address,indexed address,uint256,uint256)

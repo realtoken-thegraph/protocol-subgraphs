@@ -21,6 +21,7 @@ import {
   Reserve,
   StableTokenDelegatedAllowance,
   VariableTokenDelegatedAllowance,
+  AToken,
 } from '../../../generated/schema';
 import {
   getOrInitAToken,
@@ -35,8 +36,10 @@ import {
 } from '../../helpers/initializers';
 import { zeroBI } from '../../utils/converters';
 import { calculateUtilizationRate } from '../../helpers/reserve-logic';
-import { Address, BigInt, ethereum, log } from '@graphprotocol/graph-ts';
+import { Address, BigInt, ethereum } from '@graphprotocol/graph-ts';
 import { rayDiv, rayMul } from '../../helpers/math';
+import { getAtokenId } from '../../utils/id-generation';
+import { BurnAndMintByGovernance } from '../../../generated/templates/AaveIncentivesController/AToken';
 
 function saveUserReserveAHistory(
   userReserve: UserReserve,
@@ -494,4 +497,19 @@ export function handleVariableTokenBorrowAllowanceDelegated(
   }
   delegatedAllowance.amountAllowed = amount;
   delegatedAllowance.save();
+}
+
+export function handleBurnAndMintByGovernance(event: BurnAndMintByGovernance): void {
+  const aTokenId = getAtokenId(event.address);
+  const aToken = AToken.load(aTokenId);
+  if (aToken) {
+    const reserve = getOrInitReserve(aToken.underlyingAssetAddress, event)
+    const from = new ethereum.EventParam("from", new ethereum.Value(ethereum.ValueKind.ADDRESS, event.params.oldWallet.toU64()));
+    const to = new ethereum.EventParam("to", new ethereum.Value(ethereum.ValueKind.ADDRESS, event.params.newWallet.toU64()));
+    const value = new ethereum.EventParam("value", new ethereum.Value(ethereum.ValueKind.UINT, event.params.amount.toU64()));
+    const index = new ethereum.EventParam("index", new ethereum.Value(ethereum.ValueKind.UINT, reserve.liquidityIndex.toU64()));
+
+    const createdEvent = new ATokenTransfer(event.address, event.logIndex, event.transactionLogIndex, event.logType, event.block, event.transaction, [from, to, value, index])
+    handleATokenTransfer(createdEvent)
+  }
 }
