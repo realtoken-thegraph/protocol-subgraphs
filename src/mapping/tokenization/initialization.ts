@@ -15,6 +15,7 @@ export {
   handleATokenBurn,
   handleATokenMint,
   handleATokenTransfer,
+  handleBurnAndMintByGovernance,
   handleVariableTokenBurn,
   handleVariableTokenMint,
   handleStableTokenMint,
