@@ -182,6 +182,8 @@ templates:
       eventHandlers:
         - event: AnswerUpdated(indexed int256,indexed uint256,uint256)
           handler: handleChainlinkAnswerUpdated
+        - event: PriceUpdated(indexed uint256)
+          handler: handlePriceUpdated
       file: src/mapping/price-oracle/price-oracle.ts
 
   # --------------------------------------

@@ -16,6 +16,7 @@ import { PriceOracle } from '../../../generated/schema';
 import { AaveOracle } from '../../../generated/AaveOracle/AaveOracle';
 import { MOCK_USD_ADDRESS } from '../../utils/constants';
 import { genericPriceUpdate, usdEthPriceUpdate } from '../../helpers/price-updates';
+import { PriceUpdated } from '../../../generated/AaveOracle/IExtendedPriceAggregator';
 
 // GANACHE
 export function handleAssetPriceUpdated(event: AssetPriceUpdated): void {
@@ -72,25 +73,24 @@ function genericHandleChainlinkUSDETHPrice(
   }
 }
 
-// Ropsten and Mainnet
-export function handleChainlinkAnswerUpdated(event: AnswerUpdated): void {
-  let priceOracle = getOrInitPriceOracle();
+function oraclePriceChanged(event: ethereum.Event, newPrice: BigInt): void {
+    let priceOracle = getOrInitPriceOracle();
   let chainlinkAggregator = getChainlinkAggregator(event.address.toHexString());
 
   if (priceOracle.usdPriceEthMainSource.equals(event.address)) {
     let proxyPriceProvider = AaveOracle.bind(
       Address.fromString(priceOracle.proxyPriceProvider.toHexString())
     );
-    genericHandleChainlinkUSDETHPrice(event.params.current, event, priceOracle, proxyPriceProvider);
+    genericHandleChainlinkUSDETHPrice(newPrice, event, priceOracle, proxyPriceProvider);
   } else {
     let oracleAsset = getPriceOracleAsset(chainlinkAggregator.oracleAsset);
 
     // if it's correct oracle for this asset
     if (oracleAsset.priceSource.equals(event.address)) {
       // if oracle answer is valid
-      if (event.params.current.gt(zeroBI())) {
+      if (newPrice.gt(zeroBI())) {
         oracleAsset.isFallbackRequired = false;
-        genericPriceUpdate(oracleAsset, event.params.current, event);
+        genericPriceUpdate(oracleAsset, newPrice, event);
 
         let updatedTokensWithFallback = [] as string[];
         if (priceOracle.tokensWithFallback.includes(oracleAsset.id)) {
@@ -117,7 +117,7 @@ export function handleChainlinkAnswerUpdated(event: AnswerUpdated): void {
             [
               oracleAsset.id,
               priceOracle.proxyPriceProvider.toHexString(),
-              event.params.current.toString(),
+              newPrice.toString(),
               event.address.toHexString(),
             ]
           );
@@ -132,4 +132,13 @@ export function handleChainlinkAnswerUpdated(event: AnswerUpdated): void {
       }
     }
   }
+}
+
+export function handlePriceUpdated(event: PriceUpdated): void {
+    oraclePriceChanged(event, event.params.newPrice)
+}
+
+// Ropsten and Mainnet
+export function handleChainlinkAnswerUpdated(event: AnswerUpdated): void {
+    oraclePriceChanged(event, event.params.current) 
 }

@@ -79,16 +79,28 @@ export function priceFeedUpdated(
       // get underlying aggregator from proxy (assetOracleAddress) address
       let chainlinkProxyInstance = EACAggregatorProxy.bind(assetOracleAddress);
       let aggregatorAddressCall = chainlinkProxyInstance.try_aggregator();
+      let aggregatorAddress: Address = Address.zero();
       // If we can't get the aggregator, it means that the source address is not a chainlink proxy
       // so it has been registered badly.
-      if (aggregatorAddressCall.reverted) {
-        log.error(
-          `PROXY: Simple Type must be a chainlink proxy. || asset: {} | assetOracleAddress: {}`,
-          [sAssetAddress, assetOracleAddress.toHexString()]
-        );
-        return;
+      if (!aggregatorAddressCall.reverted) aggregatorAddress = aggregatorAddressCall.value;
+      else {
+        let checkVersionZeroCall = chainlinkProxyInstance.try_fee();
+        if (!checkVersionZeroCall.reverted) aggregatorAddress = assetOracleAddress;
+        else {
+          let checkVersionOneCall = chainlinkProxyInstance.try_convertFromNativeCurrencyToUsd(zeroBI());
+          if (!checkVersionOneCall.reverted) aggregatorAddress = assetOracleAddress;
+          else {
+            log.error(`couldn't specify correct oracle interface reverting || asset: {} | assetOracle: {}`, [
+              sAssetAddress,
+              assetOracleAddress.toHexString(),
+            ]);
+            return;
+          }
+        }
       }
-      let aggregatorAddress = aggregatorAddressCall.value;
+
+      if (aggregatorAddress.equals(Address.zero())) return;
+
       priceOracleAsset.priceSource = aggregatorAddress;
       // create ChainLink aggregator template entity
       ChainlinkAggregatorContract.create(aggregatorAddress);
