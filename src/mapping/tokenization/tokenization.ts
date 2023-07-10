@@ -2,6 +2,7 @@ import {
   BalanceTransfer as ATokenTransfer,
   Mint as ATokenMint,
   Burn as ATokenBurn,
+  BurnAndMintByGovernance,
 } from '../../../generated/templates/AToken/AToken';
 import {
   Mint as VTokenMint,
@@ -30,8 +31,8 @@ import {
   getOrInitSToken,
   getOrInitVToken,
   getOrInitUser,
-  // getPriceOracleAsset,
-  // getOrInitPriceOracle,
+  getPriceOracleAsset,
+  getOrInitPriceOracle,
   getOrInitReserveParamsHistoryItem,
 } from '../../helpers/initializers';
 import { zeroBI } from '../../utils/converters';
@@ -39,7 +40,6 @@ import { calculateUtilizationRate } from '../../helpers/reserve-logic';
 import { Address, BigInt, ethereum } from '@graphprotocol/graph-ts';
 import { rayDiv, rayMul } from '../../helpers/math';
 import { getAtokenId } from '../../utils/id-generation';
-import { BurnAndMintByGovernance } from '../../../generated/templates/AaveIncentivesController/AToken';
 
 function saveUserReserveAHistory(
   userReserve: UserReserve,
@@ -125,12 +125,13 @@ function saveReserve(reserve: Reserve, event: ethereum.Event): void {
   reserveParamsHistoryItem.liquidityRate = reserve.liquidityRate;
   reserveParamsHistoryItem.totalATokenSupply = reserve.totalATokenSupply;
   reserveParamsHistoryItem.averageStableBorrowRate = reserve.averageStableRate;
-  // let priceOracleAsset = getPriceOracleAsset(reserve.price);
-  // reserveParamsHistoryItem.priceInEth = priceOracleAsset.priceInEth;
+  let priceOracleAsset = getPriceOracleAsset(reserve.price);
+  reserveParamsHistoryItem.priceInEth = priceOracleAsset.priceInEth;
 
-  // REMOVED DIV BY 0
-  // reserveParamsHistoryItem.priceInUsd = reserveParamsHistoryItem.priceInEth
-  //   .toBigDecimal();
+  let priceOracle = getOrInitPriceOracle();
+  reserveParamsHistoryItem.priceInUsd = reserveParamsHistoryItem.priceInEth
+    .toBigDecimal()
+    .div(priceOracle.usdPriceEth.toBigDecimal());
 
   reserveParamsHistoryItem.timestamp = event.block.timestamp.toI32();
   reserveParamsHistoryItem.save();
@@ -175,8 +176,7 @@ function tokenMint(event: ethereum.Event, from: Address, value: BigInt, index: B
   let poolReserve = getOrInitReserve(aToken.underlyingAssetAddress, event);
   poolReserve.totalATokenSupply = poolReserve.totalATokenSupply.plus(value);
   // Check if we are minting to treasury for mainnet and polygon
-  if (
-    from.toHexString().toLowerCase() != '0x2c15338cadd34753ddeccfc22762ddd981c671a4' ) {
+  if (from.toHexString().toLowerCase() != '0x2c15338cadd34753ddeccfc22762ddd981c671a4') {
     let userReserve = getOrInitUserReserve(from, aToken.underlyingAssetAddress, event);
     let calculatedAmount = rayDiv(value, index);
 
