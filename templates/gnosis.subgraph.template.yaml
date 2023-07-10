@@ -5,6 +5,29 @@ schema:
   file: ./schema.graphql
 dataSources:
   # --------------------------------------
+  #      INDEX AS SOON AS POSSIBLE
+  # --------------------------------------
+  - name: AdminUpgradeabilityProxy
+    kind: ethereum/contract
+    network: {{network}}
+    source:
+      abi: AdminUpgradeabilityProxy
+      address: '{{InitializerAddress}}'
+      startBlock: {{InitializerStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/mapping/registry.ts
+      entities:
+        - UserReserve
+      abis:
+        - name: AdminUpgradeabilityProxy
+          file: ./abis/AdminUpgradeabilityProxy.json
+      eventHandlers:
+        - event: 'OwnershipTransferred(indexed address,indexed address)'
+          handler: initRegistry
+  # --------------------------------------
   #      ORACLES / PRICE PROVIDERS
   # --------------------------------------
   - kind: ethereum/contract
