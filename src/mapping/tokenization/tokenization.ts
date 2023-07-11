@@ -37,7 +37,7 @@ import {
 } from '../../helpers/initializers';
 import { zeroBI } from '../../utils/converters';
 import { calculateUtilizationRate } from '../../helpers/reserve-logic';
-import { Address, BigInt, ethereum } from '@graphprotocol/graph-ts';
+import { Address, BigDecimal, BigInt, ethereum, log } from '@graphprotocol/graph-ts';
 import { rayDiv, rayMul } from '../../helpers/math';
 import { getAtokenId } from '../../utils/id-generation';
 
@@ -129,15 +129,17 @@ function saveReserve(reserve: Reserve, event: ethereum.Event): void {
   reserveParamsHistoryItem.priceInEth = priceOracleAsset.priceInEth;
 
   let priceOracle = getOrInitPriceOracle();
-  reserveParamsHistoryItem.priceInUsd = reserveParamsHistoryItem.priceInEth
+  if (priceOracle.usdPriceEth.gt(zeroBI())) reserveParamsHistoryItem.priceInUsd = reserveParamsHistoryItem.priceInEth
     .toBigDecimal()
     .div(priceOracle.usdPriceEth.toBigDecimal());
+  else reserveParamsHistoryItem.priceInUsd = BigDecimal.zero();
 
   reserveParamsHistoryItem.timestamp = event.block.timestamp.toI32();
   reserveParamsHistoryItem.save();
 }
 
 function tokenBurn(event: ethereum.Event, from: Address, value: BigInt, index: BigInt): void {
+  if (index.equals(zeroBI())) { log.warning("index == zero cannot divide by zero | hash: {}", [event.transaction.hash.toHex()]); return; } // can't div by zero
   let aToken = getOrInitAToken(event.address);
   let userReserve = getOrInitUserReserve(from, aToken.underlyingAssetAddress, event);
   let poolReserve = getOrInitReserve(aToken.underlyingAssetAddress, event);
@@ -172,6 +174,7 @@ function tokenBurn(event: ethereum.Event, from: Address, value: BigInt, index: B
 }
 
 function tokenMint(event: ethereum.Event, from: Address, value: BigInt, index: BigInt): void {
+  if (index.equals(zeroBI())) { log.warning("index == zero cannot divide by zero | hash: {}", [event.transaction.hash.toHex()]); return; } // can't div by zero
   let aToken = getOrInitAToken(event.address);
   let poolReserve = getOrInitReserve(aToken.underlyingAssetAddress, event);
   poolReserve.totalATokenSupply = poolReserve.totalATokenSupply.plus(value);
@@ -257,6 +260,7 @@ export function handleVariableTokenBurn(event: VTokenBurn): void {
   let from = event.params.user;
   let value = event.params.amount;
   let index = event.params.index;
+  if (index.equals(zeroBI())) { log.warning("index == zero cannot divide by zero | hash: {}", [event.transaction.hash.toHex()]); return; } // can't div by zero
   let userReserve = getOrInitUserReserve(from, vToken.underlyingAssetAddress, event);
   let poolReserve = getOrInitReserve(vToken.underlyingAssetAddress, event);
 
@@ -296,6 +300,8 @@ export function handleVariableTokenBurn(event: VTokenBurn): void {
 }
 
 export function handleVariableTokenMint(event: VTokenMint): void {
+  let index = event.params.index;
+  if (index.equals(zeroBI())) { log.warning("index == zero cannot divide by zero | hash: {}", [event.transaction.hash.toHex()]); return; } // can't div by zero
   let vToken = getOrInitVToken(event.address);
   let poolReserve = getOrInitReserve(vToken.underlyingAssetAddress, event);
 
@@ -305,7 +311,6 @@ export function handleVariableTokenMint(event: VTokenMint): void {
   }
 
   let value = event.params.value;
-  let index = event.params.index;
 
   let userReserve = getOrInitUserReserve(from, vToken.underlyingAssetAddress, event);
 
