@@ -176,7 +176,7 @@ function tokenMint(event: ethereum.Event, from: Address, value: BigInt, index: B
   poolReserve.totalATokenSupply = poolReserve.totalATokenSupply.plus(value);
   // Check if we are minting to treasury for mainnet and polygon
   if (
-    from.toHexString() != '0x2c15338cadd34753ddeCCFc22762DdD981c671A4' ) {
+    from.toHexString().toLowerCase() != '0x2c15338cadd34753ddeccfc22762ddd981c671a4' ) {
     let userReserve = getOrInitUserReserve(from, aToken.underlyingAssetAddress, event);
     let calculatedAmount = rayDiv(value, index);
 
@@ -504,10 +504,10 @@ export function handleBurnAndMintByGovernance(event: BurnAndMintByGovernance): v
   const aToken = AToken.load(aTokenId);
   if (aToken) {
     const reserve = getOrInitReserve(aToken.underlyingAssetAddress, event)
-    const from = new ethereum.EventParam("from", new ethereum.Value(ethereum.ValueKind.ADDRESS, event.params.oldWallet.toU64()));
-    const to = new ethereum.EventParam("to", new ethereum.Value(ethereum.ValueKind.ADDRESS, event.params.newWallet.toU64()));
-    const value = new ethereum.EventParam("value", new ethereum.Value(ethereum.ValueKind.UINT, event.params.amount.toU64()));
-    const index = new ethereum.EventParam("index", new ethereum.Value(ethereum.ValueKind.UINT, reserve.liquidityIndex.toU64()));
+    const from = new ethereum.EventParam("from", ethereum.Value.fromAddress(event.params.oldWallet));
+    const to = new ethereum.EventParam("to", ethereum.Value.fromAddress(event.params.newWallet));
+    const value = new ethereum.EventParam("value", ethereum.Value.fromUnsignedBigInt(event.params.amount));
+    const index = new ethereum.EventParam("index", ethereum.Value.fromUnsignedBigInt(reserve.liquidityIndex));
 
     const createdEvent = new ATokenTransfer(event.address, event.logIndex, event.transactionLogIndex, event.logType, event.block, event.transaction, [from, to, value, index])
     handleATokenTransfer(createdEvent)

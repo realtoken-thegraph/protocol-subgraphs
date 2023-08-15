@@ -25,7 +25,7 @@ let POOL_COMPONENTS = [
   'lendingPool',
   'lendingPoolImpl',
   'configurationAdmin',
-  'proxyPriceProvider',
+  // 'proxyPriceProvider',
   'lendingRateOracle',
   'lendingPoolCollateralManager',
   'emergencyAdmin',
@@ -104,8 +104,8 @@ export function handleAddressSet(event: AddressSet): void {
     mappedId = 'emergencyAdmin';
   } else if (event.params.id.toString() == 'COLLATERAL_MANAGER') {
     mappedId = 'lendingPoolCollateralManager';
-  } else if (event.params.id.toString() == 'PRICE_ORACLE') {
-    mappedId = 'proxyPriceProvider';
+  // } else if (event.params.id.toString() == 'PRICE_ORACLE') {
+  //   mappedId = 'proxyPriceProvider';
   } else if (event.params.id.toString() == 'LENDING_RATE_ORACLE') {
     mappedId = 'lendingRateOracle';
   }
@@ -121,7 +121,7 @@ export function handleAddressSet(event: AddressSet): void {
 }
 
 export function handlePriceOracleUpdated(event: PriceOracleUpdated): void {
-  genericAddressProviderUpdate('proxyPriceProvider', event.params.newAddress, event, false);
+  // genericAddressProviderUpdate('proxyPriceProvider', event.params.newAddress, event, false);
 
   // TODO: should be more general
   // let priceOracle = getOrInitPriceOracle();

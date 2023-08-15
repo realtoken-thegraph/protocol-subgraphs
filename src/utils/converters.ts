@@ -119,7 +119,7 @@ export function getPriceOracleAssetPlatform(_type: BigInt): string {
 }
 
 export function byteArrayFromHex(s: string): ByteArray {
-  if (s.length % 2 !== 0) {
+  if (s.length % 2 != 0) {
     throw new TypeError('Hex string must have an even number of characters');
   }
   let out = new Uint8Array(s.length / 2);
