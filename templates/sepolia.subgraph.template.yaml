@@ -353,7 +353,7 @@ templates:
         - event: ReserveStableRateBorrowing(indexed address,bool)
           handler: handleReserveStableRateBorrowing
         - event: ReserveActive(indexed address,bool)
-          handler: handleReserveActive
+          handler: handleReserveActivated
         - event: ReserveFrozen(indexed address,bool)
           handler: handleReserveFrozen
         - event: ReservePaused(indexed address,bool)
