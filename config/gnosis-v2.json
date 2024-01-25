@@ -1,7 +1,0 @@
-{
-  "network": "xdai",
-  "AaveOracleAddress": "0x1a88d967936a73326562d2310062eCE226Ed6664",
-  "AaveOracleStartBlock": 20206500,
-  "LendingPoolAddressesProviderRegistryAddress": "0xae6933231Fb83257696E29B050cA6068D6E6Cc84",
-  "LendingPoolAddressesProviderRegistryStartBlock": 20206000
-}

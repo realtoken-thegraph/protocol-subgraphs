@@ -1,24 +1,22 @@
-import { BigDecimal, BigInt } from '@graphprotocol/graph-ts';
-import {
-  BORROW_MODE_STABLE,
-  BORROW_MODE_VARIABLE,
-  getBorrowRateMode,
-} from '../../utils/converters';
+import { BigInt, log } from '@graphprotocol/graph-ts';
 import {
   Borrow,
-  Deposit,
+  Supply,
   FlashLoan,
   LiquidationCall,
   RebalanceStableBorrowRate,
-  Paused,
-  Unpaused,
   Withdraw,
   Repay,
   ReserveUsedAsCollateralDisabled,
   ReserveUsedAsCollateralEnabled,
-  Swap,
+  SwapBorrowRateMode,
   ReserveDataUpdated,
-} from '../../../generated/templates/LendingPool/LendingPool';
+  MintUnbacked,
+  BackUnbacked,
+  UserEModeSet,
+  MintedToTreasury,
+  IsolationModeTotalDebtUpdated,
+} from '../../../generated/templates/Pool/Pool';
 import {
   getOrInitReferrer,
   getOrInitReserve,
@@ -26,58 +24,58 @@ import {
   getOrInitUserReserve,
   getPoolByContract,
   getPriceOracleAsset,
-} from '../../helpers/initializers';
+} from '../../helpers/v3/initializers';
 import {
   Borrow as BorrowAction,
-  Deposit as DepositAction,
+  Supply as SupplyAction,
   FlashLoan as FlashLoanAction,
   LiquidationCall as LiquidationCallAction,
-  Pool,
-  PriceOracle,
   RebalanceStableBorrowRate as RebalanceStableBorrowRateAction,
   RedeemUnderlying as RedeemUnderlyingAction,
   Repay as RepayAction,
-  Swap as SwapAction,
+  SwapBorrowRate as SwapBorrowRateAction,
   UsageAsCollateral as UsageAsCollateralAction,
+  MintUnbacked as MintUnbackedAction,
+  BackUnbacked as BackUnbackedAction,
+  UserEModeSet as UserEModeSetAction,
+  MintedToTreasury as MintedToTreasuryAction,
+  IsolationModeTotalDebtUpdated as IsolationModeTotalDebtUpdatedAction,
+  Pool,
 } from '../../../generated/schema';
 import { getHistoryEntityId } from '../../utils/id-generation';
 import { calculateGrowth } from '../../helpers/math';
-import { ETH_PRECISION, USD_PRECISION } from '../../utils/constants';
+import { USD_PRECISION } from '../../utils/constants';
 
-export function handleDeposit(event: Deposit): void {
+export function handleSupply(event: Supply): void {
   let caller = event.params.user;
   let user = event.params.onBehalfOf;
+
   let poolReserve = getOrInitReserve(event.params.reserve, event);
   let userReserve = getOrInitUserReserve(user, event.params.reserve, event);
-  let depositedAmount = event.params.amount;
+  let amount = event.params.amount;
 
-  let deposit = new DepositAction(getHistoryEntityId(event));
-  deposit.txHash = event.transaction.hash;
-  deposit.action = 'Deposit';
-  deposit.pool = poolReserve.pool;
-  deposit.user = userReserve.user;
-  deposit.caller = getOrInitUser(caller).id;
-  deposit.userReserve = userReserve.id;
-  deposit.reserve = poolReserve.id;
-  deposit.amount = depositedAmount;
-  deposit.timestamp = event.block.timestamp.toI32();
+  let id = getHistoryEntityId(event);
+  if (SupplyAction.load(id)) {
+    id = id + '0';
+  }
+
+  let supply = new SupplyAction(id);
+  supply.txHash = event.transaction.hash;
+  supply.action = 'Supply';
+  supply.pool = poolReserve.pool;
+  supply.user = userReserve.user;
+  supply.caller = getOrInitUser(caller).id;
+  supply.userReserve = userReserve.id;
+  supply.reserve = poolReserve.id;
+  supply.amount = amount;
+  supply.timestamp = event.block.timestamp.toI32();
   let priceOracleAsset = getPriceOracleAsset(poolReserve.price);
-  let usdPriceEth = PriceOracle.load('1');
-  if (usdPriceEth && usdPriceEth.usdPriceEth.toString() != '0') {
-    const ethPriceUSD = BigDecimal.fromString('1').div(
-      usdPriceEth.usdPriceEth.divDecimal(ETH_PRECISION)
-    );
-    deposit.assetPriceUSD = priceOracleAsset.priceInEth
-      .divDecimal(ETH_PRECISION)
-      .times(ethPriceUSD);
-  } else {
-    deposit.assetPriceUSD = priceOracleAsset.priceInEth.divDecimal(USD_PRECISION);
+  supply.assetPriceUSD = priceOracleAsset.priceInEth.divDecimal(USD_PRECISION);
+  if (event.params.referralCode) {
+    let referrer = getOrInitReferrer(event.params.referralCode);
+    supply.referrer = referrer.id;
   }
-  if (event.params.referral) {
-    let referrer = getOrInitReferrer(event.params.referral);
-    deposit.referrer = referrer.id;
-  }
-  deposit.save();
+  supply.save();
 }
 
 export function handleWithdraw(event: Withdraw): void {
@@ -85,6 +83,9 @@ export function handleWithdraw(event: Withdraw): void {
   let poolReserve = getOrInitReserve(event.params.reserve, event);
   let userReserve = getOrInitUserReserve(event.params.user, event.params.reserve, event);
   let redeemedAmount = event.params.amount;
+
+  // The case for when withdrawing ETH is not possible to know which user has triggered it
+  // as the event emitted will contain user and to equal to WethGateway address
 
   let redeemUnderlying = new RedeemUnderlyingAction(getHistoryEntityId(event));
   redeemUnderlying.txHash = event.transaction.hash;
@@ -97,23 +98,13 @@ export function handleWithdraw(event: Withdraw): void {
   redeemUnderlying.amount = redeemedAmount;
   redeemUnderlying.timestamp = event.block.timestamp.toI32();
   let priceOracleAsset = getPriceOracleAsset(poolReserve.price);
-  let usdPriceEth = PriceOracle.load('1');
-  if (usdPriceEth && usdPriceEth.usdPriceEth.toString() != '0') {
-    const ethPriceUSD = BigDecimal.fromString('1').div(
-      usdPriceEth.usdPriceEth.divDecimal(ETH_PRECISION)
-    );
-    redeemUnderlying.assetPriceUSD = priceOracleAsset.priceInEth
-      .divDecimal(ETH_PRECISION)
-      .times(ethPriceUSD);
-  } else {
-    redeemUnderlying.assetPriceUSD = priceOracleAsset.priceInEth.divDecimal(USD_PRECISION);
-  }
+  redeemUnderlying.assetPriceUSD = priceOracleAsset.priceInEth.divDecimal(USD_PRECISION);
   redeemUnderlying.save();
 }
 
 export function handleBorrow(event: Borrow): void {
-  let caller = event.params.user;
   let user = event.params.onBehalfOf;
+  let caller = event.params.user;
   let userReserve = getOrInitUserReserve(user, event.params.reserve, event);
   let poolReserve = getOrInitReserve(event.params.reserve, event);
 
@@ -129,57 +120,30 @@ export function handleBorrow(event: Borrow): void {
   borrow.stableTokenDebt = userReserve.principalStableDebt;
   borrow.variableTokenDebt = userReserve.scaledVariableDebt;
   borrow.borrowRate = event.params.borrowRate;
-  borrow.borrowRateMode = getBorrowRateMode(event.params.borrowRateMode);
+  borrow.borrowRateMode = event.params.interestRateMode;
   borrow.timestamp = event.block.timestamp.toI32();
-  if (event.params.referral) {
-    let referrer = getOrInitReferrer(event.params.referral);
+  if (event.params.referralCode) {
+    let referrer = getOrInitReferrer(event.params.referralCode);
     borrow.referrer = referrer.id;
   }
   let priceOracleAsset = getPriceOracleAsset(poolReserve.price);
-  let usdPriceEth = PriceOracle.load('1');
-  if (usdPriceEth && usdPriceEth.usdPriceEth.toString() != '0') {
-    const ethPriceUSD = BigDecimal.fromString('1').div(
-      usdPriceEth.usdPriceEth.divDecimal(ETH_PRECISION)
-    );
-    borrow.assetPriceUSD = priceOracleAsset.priceInEth.divDecimal(ETH_PRECISION).times(ethPriceUSD);
-  } else {
-    borrow.assetPriceUSD = priceOracleAsset.priceInEth.divDecimal(USD_PRECISION);
-  }
+  borrow.assetPriceUSD = priceOracleAsset.priceInEth.divDecimal(USD_PRECISION);
   borrow.save();
 }
 
-export function handlePaused(event: Paused): void {
-  let poolId = getPoolByContract(event);
-  let lendingPool = Pool.load(poolId);
-  if (lendingPool) {
-    lendingPool.paused = true;
-    lendingPool.save();
-  }
-}
-
-export function handleUnpaused(event: Unpaused): void {
-  let poolId = getPoolByContract(event);
-  let lendingPool = Pool.load(poolId);
-
-  if (lendingPool) {
-    lendingPool.paused = false;
-    lendingPool.save();
-  }
-}
-
-export function handleSwap(event: Swap): void {
+export function handleSwapBorrowRateMode(event: SwapBorrowRateMode): void {
   let userReserve = getOrInitUserReserve(event.params.user, event.params.reserve, event);
   let poolReserve = getOrInitReserve(event.params.reserve, event);
 
-  let swapHistoryItem = new SwapAction(getHistoryEntityId(event));
+  let swapHistoryItem = new SwapBorrowRateAction(getHistoryEntityId(event));
   swapHistoryItem.txHash = event.transaction.hash;
-  swapHistoryItem.action = 'Swap';
+  swapHistoryItem.action = 'SwapBorrowRate';
   swapHistoryItem.pool = poolReserve.pool;
-  swapHistoryItem.borrowRateModeFrom = getBorrowRateMode(event.params.rateMode);
-  if (swapHistoryItem.borrowRateModeFrom === BORROW_MODE_STABLE) {
-    swapHistoryItem.borrowRateModeTo = BORROW_MODE_VARIABLE;
+  swapHistoryItem.borrowRateModeFrom = event.params.interestRateMode;
+  if (swapHistoryItem.borrowRateModeFrom === 1) {
+    swapHistoryItem.borrowRateModeTo = 2;
   } else {
-    swapHistoryItem.borrowRateModeTo = BORROW_MODE_STABLE;
+    swapHistoryItem.borrowRateModeTo = 1;
   }
 
   swapHistoryItem.variableBorrowRate = poolReserve.variableBorrowRate;
@@ -209,8 +173,9 @@ export function handleRebalanceStableBorrowRate(event: RebalanceStableBorrowRate
 }
 
 export function handleRepay(event: Repay): void {
-  let repayer = getOrInitUser(event.params.repayer);
-  let userReserve = getOrInitUserReserve(event.params.user, event.params.reserve, event);
+  let repayer = event.params.repayer;
+  let user = event.params.user;
+  let userReserve = getOrInitUserReserve(user, event.params.reserve, event);
   let poolReserve = getOrInitReserve(event.params.reserve, event);
 
   poolReserve.save();
@@ -220,21 +185,14 @@ export function handleRepay(event: Repay): void {
   repay.action = 'Repay';
   repay.pool = poolReserve.pool;
   repay.user = userReserve.user;
-  repay.repayer = repayer.id;
+  repay.repayer = getOrInitUser(repayer).id;
   repay.userReserve = userReserve.id;
   repay.reserve = poolReserve.id;
   repay.amount = event.params.amount;
   repay.timestamp = event.block.timestamp.toI32();
+  repay.useATokens = event.params.useATokens;
   let priceOracleAsset = getPriceOracleAsset(poolReserve.price);
-  let usdPriceEth = PriceOracle.load('1');
-  if (usdPriceEth && usdPriceEth.usdPriceEth.toString() != '0') {
-    const ethPriceUSD = BigDecimal.fromString('1').div(
-      usdPriceEth.usdPriceEth.divDecimal(ETH_PRECISION)
-    );
-    repay.assetPriceUSD = priceOracleAsset.priceInEth.divDecimal(ETH_PRECISION).times(ethPriceUSD);
-  } else {
-    repay.assetPriceUSD = priceOracleAsset.priceInEth.divDecimal(USD_PRECISION);
-  }
+  repay.assetPriceUSD = priceOracleAsset.priceInEth.divDecimal(USD_PRECISION);
   repay.save();
 }
 
@@ -273,40 +231,40 @@ export function handleLiquidationCall(event: LiquidationCall): void {
   liquidationCall.principalAmount = event.params.debtToCover;
   liquidationCall.liquidator = event.params.liquidator;
   liquidationCall.timestamp = event.block.timestamp.toI32();
-  let usdPriceEth = PriceOracle.load('1');
   let collateralPriceOracleAsset = getPriceOracleAsset(collateralPoolReserve.price);
   let borrowPriceOracleAsset = getPriceOracleAsset(principalPoolReserve.price);
-  if (usdPriceEth && usdPriceEth.usdPriceEth.toString() != '0') {
-    const ethPriceUSD = BigDecimal.fromString('1').div(
-      usdPriceEth.usdPriceEth.divDecimal(ETH_PRECISION)
-    );
-    liquidationCall.collateralAssetPriceUSD = collateralPriceOracleAsset.priceInEth
-      .divDecimal(ETH_PRECISION)
-      .times(ethPriceUSD);
-    liquidationCall.borrowAssetPriceUSD = borrowPriceOracleAsset.priceInEth
-      .divDecimal(ETH_PRECISION)
-      .times(ethPriceUSD);
-  } else {
-    liquidationCall.collateralAssetPriceUSD = collateralPriceOracleAsset.priceInEth.divDecimal(
-      USD_PRECISION
-    );
-    liquidationCall.borrowAssetPriceUSD = borrowPriceOracleAsset.priceInEth.divDecimal(
-      USD_PRECISION
-    );
-  }
+  liquidationCall.collateralAssetPriceUSD = collateralPriceOracleAsset.priceInEth.divDecimal(
+    USD_PRECISION
+  );
+  liquidationCall.borrowAssetPriceUSD = borrowPriceOracleAsset.priceInEth.divDecimal(USD_PRECISION);
   liquidationCall.save();
 }
 
 export function handleFlashLoan(event: FlashLoan): void {
   let initiator = getOrInitUser(event.params.initiator);
   let poolReserve = getOrInitReserve(event.params.asset, event);
+  let poolId = getPoolByContract(event);
+  let pool = Pool.load(poolId) as Pool;
 
   let premium = event.params.premium;
-
+  let premiumToProtocol = premium
+    .times(pool.flashloanPremiumToProtocol as BigInt)
+    .plus(BigInt.fromI32(5000))
+    .div(BigInt.fromI32(10000));
+  let premiumToLP = premium.minus(premiumToProtocol);
+  log.error('premium {},{},{}', [
+    premium.toString(),
+    premiumToProtocol.toString(),
+    premiumToLP.toString(),
+  ]);
   poolReserve.availableLiquidity = poolReserve.availableLiquidity.plus(premium);
 
   poolReserve.lifetimeFlashLoans = poolReserve.lifetimeFlashLoans.plus(event.params.amount);
   poolReserve.lifetimeFlashLoanPremium = poolReserve.lifetimeFlashLoanPremium.plus(premium);
+  poolReserve.lifetimeFlashLoanLPPremium = poolReserve.lifetimeFlashLoanLPPremium.plus(premiumToLP);
+  poolReserve.lifetimeFlashLoanProtocolPremium = poolReserve.lifetimeFlashLoanProtocolPremium.plus(
+    premiumToProtocol
+  );
   poolReserve.totalATokenSupply = poolReserve.totalATokenSupply.plus(premium);
 
   poolReserve.save();
@@ -317,8 +275,12 @@ export function handleFlashLoan(event: FlashLoan): void {
   flashLoan.target = event.params.target;
   flashLoan.initiator = initiator.id;
   flashLoan.totalFee = premium;
+  flashLoan.lpFee = premiumToLP;
+  flashLoan.protocolFee = premiumToProtocol;
   flashLoan.amount = event.params.amount;
   flashLoan.timestamp = event.block.timestamp.toI32();
+  let priceOracleAsset = getPriceOracleAsset(poolReserve.price);
+  flashLoan.assetPriceUSD = priceOracleAsset.priceInEth.divDecimal(USD_PRECISION);
   flashLoan.save();
 }
 
@@ -383,13 +345,107 @@ export function handleReserveDataUpdated(event: ReserveDataUpdated): void {
       timestamp
     );
     reserve.totalATokenSupply = reserve.totalATokenSupply.plus(growth);
-    reserve.lifetimeDepositorsInterestEarned = reserve.lifetimeDepositorsInterestEarned.plus(
-      growth
-    );
+    reserve.lifetimeSuppliersInterestEarned = reserve.lifetimeSuppliersInterestEarned.plus(growth);
   }
   reserve.liquidityRate = event.params.liquidityRate;
   reserve.liquidityIndex = event.params.liquidityIndex;
   reserve.lastUpdateTimestamp = event.block.timestamp.toI32();
 
   reserve.save();
+}
+
+export function handleMintUnbacked(event: MintUnbacked): void {
+  let caller = event.params.user;
+  let user = event.params.onBehalfOf;
+  let poolReserve = getOrInitReserve(event.params.reserve, event);
+  let userReserve = getOrInitUserReserve(user, event.params.reserve, event);
+  let amount = event.params.amount;
+
+  let mintUnbacked = new MintUnbackedAction(getHistoryEntityId(event));
+  mintUnbacked.pool = poolReserve.pool;
+  mintUnbacked.user = userReserve.user;
+  mintUnbacked.userReserve = userReserve.id;
+  mintUnbacked.caller = getOrInitUser(caller).id;
+  mintUnbacked.reserve = poolReserve.id;
+  mintUnbacked.amount = amount;
+  mintUnbacked.timestamp = event.block.timestamp.toI32();
+  mintUnbacked.referral = event.params.referralCode;
+
+  mintUnbacked.save();
+}
+
+export function handleBackUnbacked(event: BackUnbacked): void {
+  let backer = event.params.backer;
+  let poolReserve = getOrInitReserve(event.params.reserve, event);
+  let userReserve = getOrInitUserReserve(backer, event.params.reserve, event);
+  let amount = event.params.amount;
+
+  let poolId = getPoolByContract(event);
+  let pool = Pool.load(poolId) as Pool;
+
+  let premium = event.params.fee;
+  let premiumToProtocol = premium
+    .times(pool.bridgeProtocolFee as BigInt)
+    .plus(BigInt.fromI32(5000))
+    .div(BigInt.fromI32(10000));
+  let premiumToLP = premium.minus(premiumToProtocol);
+  poolReserve.lifetimePortalLPFee = poolReserve.lifetimePortalLPFee.plus(premiumToLP);
+  poolReserve.lifetimePortalProtocolFee = poolReserve.lifetimePortalProtocolFee.plus(
+    premiumToProtocol
+  );
+  poolReserve.save();
+
+  let backUnbacked = new BackUnbackedAction(getHistoryEntityId(event));
+  backUnbacked.pool = poolReserve.pool;
+  backUnbacked.backer = userReserve.user;
+  backUnbacked.userReserve = userReserve.id;
+  backUnbacked.reserve = poolReserve.id;
+  backUnbacked.amount = amount;
+  backUnbacked.timestamp = event.block.timestamp.toI32();
+  backUnbacked.fee = event.params.fee;
+  backUnbacked.lpFee = premiumToLP;
+  backUnbacked.protocolFee = premiumToProtocol;
+
+  backUnbacked.save();
+}
+
+export function handleUserEModeSet(event: UserEModeSet): void {
+  let user = getOrInitUser(event.params.user);
+
+  user.eModeCategoryId = BigInt.fromI32(event.params.categoryId).toString();
+  user.save();
+
+  let userEModeSet = new UserEModeSetAction(getHistoryEntityId(event));
+  userEModeSet.action = 'UserEModeSet'
+  userEModeSet.txHash = event.transaction.hash;
+  userEModeSet.user = user.id;
+  userEModeSet.categoryId = event.params.categoryId;
+  userEModeSet.timestamp = event.block.timestamp.toI32();
+
+  userEModeSet.save();
+}
+
+export function handleMintedToTreasury(event: MintedToTreasury): void {
+  let poolReserve = getOrInitReserve(event.params.reserve, event);
+  let amount = event.params.amountMinted;
+
+  let mintedToTreasury = new MintedToTreasuryAction(getHistoryEntityId(event));
+  mintedToTreasury.pool = poolReserve.pool;
+  mintedToTreasury.reserve = poolReserve.id;
+  mintedToTreasury.amount = amount;
+  mintedToTreasury.timestamp = event.block.timestamp.toI32();
+
+  mintedToTreasury.save();
+}
+
+export function handleIsolationModeTotalDebtUpdated(event: IsolationModeTotalDebtUpdated): void {
+  let poolReserve = getOrInitReserve(event.params.asset, event);
+
+  let isolationDebt = new IsolationModeTotalDebtUpdatedAction(getHistoryEntityId(event));
+  isolationDebt.pool = poolReserve.pool;
+  isolationDebt.reserve = poolReserve.id;
+  isolationDebt.isolatedDebt = event.params.totalDebt;
+  isolationDebt.timestamp = event.block.timestamp.toI32();
+
+  isolationDebt.save();
 }

@@ -15,9 +15,10 @@ import {
   LendingPool as LendingPoolContract,
   LendingPoolConfigurator as LendingPoolConfiguratorContract,
 } from '../../../generated/templates';
-import { createMapContractToPool /*, getOrInitPriceOracle*/ } from '../../helpers/initializers';
+import { createMapContractToPool, getOrInitPriceOracle } from '../../helpers/initializers';
 import { Pool, PoolConfigurationHistoryItem } from '../../../generated/schema';
 import { getHistoryEntityId } from '../../utils/id-generation';
+import { zeroAddress } from '../../utils/converters';
 
 let POOL_COMPONENTS = [
   'lendingPoolConfigurator',
@@ -56,7 +57,16 @@ function genericAddressProviderUpdate(
   event: ethereum.Event,
   createMapContract: boolean = true
 ): void {
-  if (!POOL_COMPONENTS.includes(component)) {
+  const length = POOL_COMPONENTS.length;
+  let score = 0;
+  for (let i = 0; i < length; i++) {
+    let param = POOL_COMPONENTS[i];
+    if (param == component) {
+      score += 1;
+    }
+  }
+
+  if (score != 1) {
     throw new Error('wrong pool component name' + component);
   }
   let poolAddress = event.address.toHexString();
@@ -124,11 +134,11 @@ export function handlePriceOracleUpdated(event: PriceOracleUpdated): void {
   genericAddressProviderUpdate('proxyPriceProvider', event.params.newAddress, event, false);
 
   // TODO: should be more general
-  // let priceOracle = getOrInitPriceOracle();
-  // if (priceOracle.proxyPriceProvider.equals(zeroAddress())) {
-  // priceOracle.proxyPriceProvider = event.params.newAddress;
-  // priceOracle.save();
-  //}
+  let priceOracle = getOrInitPriceOracle();
+  if (priceOracle.proxyPriceProvider.equals(zeroAddress())) {
+  priceOracle.proxyPriceProvider = event.params.newAddress;
+  priceOracle.save();
+  }
 }
 
 export function handleLendingRateOracleUpdated(event: LendingRateOracleUpdated): void {

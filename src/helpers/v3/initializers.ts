@@ -1,8 +1,7 @@
-import { Bytes, ethereum, log } from '@graphprotocol/graph-ts';
+import { Bytes, /* Address ,*/ ethereum, log } from '@graphprotocol/graph-ts';
+// import { Facilitator, GhoDiscount } from '../../../generated/schema';
 import {
-  AToken,
-  SToken,
-  VToken,
+  SubToken,
   PriceOracle,
   PriceOracleAsset,
   Reserve,
@@ -14,16 +13,18 @@ import {
   ChainlinkAggregator,
   ContractToPoolMapping,
   Protocol,
-  ChainlinkENS,
-} from '../../generated/schema';
+//   GhoFlashMinter,
+} from '../../../generated/schema';
+// import { GhoFlashMinter as GhoFlashMinterContract } from '../../../generated/GhoFlashMinter/GhoFlashMinter';
 import {
   PRICE_ORACLE_ASSET_PLATFORM_SIMPLE,
   PRICE_ORACLE_ASSET_TYPE_SIMPLE,
   zeroAddress,
   zeroBD,
   zeroBI,
-} from '../utils/converters';
-import { getAtokenId, getReserveId, getUserReserveId } from '../utils/id-generation';
+} from '../../utils/converters';
+import { getReserveId, getUserReserveId } from '../../utils/id-generation';
+// import { GhoDiscountRateStrategy } from '../../../generated/GhoVariableDebtToken/GhoDiscountRateStrategy';
 
 export function getProtocol(): Protocol {
   let protocolId = '1';
@@ -50,23 +51,11 @@ export function getOrInitUser(address: Bytes): User {
     user = new User(address.toHexString());
     user.borrowedReservesCount = 0;
     user.unclaimedRewards = zeroBI();
-    user.incentivesLastUpdated = 0;
+    user.rewardsLastUpdated = 0;
     user.lifetimeRewards = zeroBI();
     user.save();
   }
   return user as User;
-}
-
-export function getOrInitENS(node: string): ChainlinkENS {
-  let ens = ChainlinkENS.load(node);
-  if (!ens) {
-    ens = new ChainlinkENS(node);
-    ens.aggregatorAddress = zeroAddress();
-    ens.underlyingAddress = zeroAddress();
-    ens.symbol = '';
-    ens.save();
-  }
-  return ens as ChainlinkENS;
 }
 
 function initUserReserve(
@@ -94,14 +83,6 @@ function initUserReserve(
     userReserve.lastUpdateTimestamp = 0;
     userReserve.liquidityRate = zeroBI();
     userReserve.stableBorrowLastUpdateTimestamp = 0;
-
-    // incentives
-    userReserve.aTokenincentivesUserIndex = zeroBI();
-    userReserve.vTokenincentivesUserIndex = zeroBI();
-    userReserve.sTokenincentivesUserIndex = zeroBI();
-    userReserve.aIncentivesLastUpdateTimestamp = 0;
-    userReserve.vIncentivesLastUpdateTimestamp = 0;
-    userReserve.sIncentivesLastUpdateTimestamp = 0;
 
     let user = getOrInitUser(userAddress);
     userReserve.user = user.id;
@@ -201,21 +182,15 @@ export function getOrInitReserve(underlyingAsset: Bytes, event: ethereum.Event):
     reserve.vToken = zeroAddress().toHexString();
     reserve.sToken = zeroAddress().toHexString();
 
-    // incentives
-    reserve.aEmissionPerSecond = zeroBI();
-    reserve.vEmissionPerSecond = zeroBI();
-    reserve.sEmissionPerSecond = zeroBI();
-    reserve.aTokenIncentivesIndex = zeroBI();
-    reserve.vTokenIncentivesIndex = zeroBI();
-    reserve.sTokenIncentivesIndex = zeroBI();
-    reserve.aIncentivesLastUpdateTimestamp = 0;
-    reserve.vIncentivesLastUpdateTimestamp = 0;
-    reserve.sIncentivesLastUpdateTimestamp = 0;
-
     reserve.totalScaledVariableDebt = zeroBI();
     reserve.totalCurrentVariableDebt = zeroBI();
     reserve.totalPrincipalStableDebt = zeroBI();
-    reserve.totalDeposits = zeroBI();
+    reserve.totalSupplies = zeroBI();
+    reserve.accruedToTreasury = zeroBI();
+
+    reserve.isPaused = false;
+    reserve.isDropped = false;
+    reserve.siloedBorrowing = false;
 
     reserve.lifetimePrincipalStableDebt = zeroBI();
     reserve.lifetimeScaledVariableDebt = zeroBI();
@@ -228,14 +203,19 @@ export function getOrInitReserve(underlyingAsset: Bytes, event: ethereum.Event):
     reserve.lifetimeLiquidated = zeroBI();
     reserve.lifetimeFlashLoans = zeroBI();
     reserve.lifetimeFlashLoanPremium = zeroBI();
+    reserve.lifetimeFlashLoanLPPremium = zeroBI();
+    reserve.lifetimeFlashLoanProtocolPremium = zeroBI();
 
     reserve.stableDebtLastUpdateTimestamp = 0;
     reserve.lastUpdateTimestamp = 0;
 
     reserve.lifetimeReserveFactorAccrued = zeroBI();
-    reserve.lifetimeDepositorsInterestEarned = zeroBI();
+    reserve.lifetimeSuppliersInterestEarned = zeroBI();
     // reserve.lifetimeStableDebFeeCollected = zeroBI();
     // reserve.lifetimeVariableDebtFeeCollected = zeroBI();
+
+    reserve.lifetimePortalLPFee = zeroBI();
+    reserve.lifetimePortalProtocolFee = zeroBI();
 
     let priceOracleAsset = getPriceOracleAsset(underlyingAsset.toHexString());
     if (!priceOracleAsset.lastUpdateTimestamp) {
@@ -245,15 +225,6 @@ export function getOrInitReserve(underlyingAsset: Bytes, event: ethereum.Event):
     // TODO: think about AToken
   }
   return reserve as Reserve;
-}
-
-export function getChainlinkAggregator(id: string): ChainlinkAggregator {
-  let chainlinkAggregator = ChainlinkAggregator.load(id);
-  if (!chainlinkAggregator) {
-    chainlinkAggregator = new ChainlinkAggregator(id);
-    chainlinkAggregator.oracleAsset = '';
-  }
-  return chainlinkAggregator as ChainlinkAggregator;
 }
 
 export function getOrInitUserReserve(
@@ -266,53 +237,34 @@ export function getOrInitUserReserve(
   return initUserReserve(_underlyingAsset, _user, poolId, reserve.id);
 }
 
-export function getOrInitSToken(sTokenAddress: Bytes): SToken {
-  let sTokenId = getAtokenId(sTokenAddress);
-  let sToken = SToken.load(sTokenId);
+export function getChainlinkAggregator(id: string): ChainlinkAggregator {
+  let chainlinkAggregator = ChainlinkAggregator.load(id);
+  if (!chainlinkAggregator) {
+    chainlinkAggregator = new ChainlinkAggregator(id);
+    chainlinkAggregator.oracleAsset = '';
+  }
+  return chainlinkAggregator as ChainlinkAggregator;
+}
+
+export function getOrInitSubToken(subTokenAddress: Bytes): SubToken {
+  let sTokenId = subTokenAddress.toHexString();
+  let sToken = SubToken.load(sTokenId);
   if (!sToken) {
-    sToken = new SToken(sTokenId);
+    sToken = new SubToken(sTokenId);
     sToken.underlyingAssetAddress = new Bytes(1);
-    sToken.tokenContractImpl = zeroAddress();
     sToken.pool = '';
     sToken.underlyingAssetDecimals = 18;
   }
-  return sToken as SToken;
-}
-
-export function getOrInitVToken(vTokenAddress: Bytes): VToken {
-  let vTokenId = getAtokenId(vTokenAddress);
-  let vToken = VToken.load(vTokenId);
-  if (!vToken) {
-    vToken = new VToken(vTokenId);
-    vToken.underlyingAssetAddress = new Bytes(1);
-    vToken.tokenContractImpl = zeroAddress();
-    vToken.pool = '';
-    vToken.underlyingAssetDecimals = 18;
-  }
-  return vToken as VToken;
-}
-
-export function getOrInitAToken(aTokenAddress: Bytes): AToken {
-  let aTokenId = getAtokenId(aTokenAddress);
-  let aToken = AToken.load(aTokenId);
-  if (!aToken) {
-    aToken = new AToken(aTokenId);
-    aToken.underlyingAssetAddress = new Bytes(1);
-    aToken.tokenContractImpl = zeroAddress();
-    aToken.pool = '';
-    aToken.underlyingAssetDecimals = 18;
-  }
-  return aToken as AToken;
+  return sToken as SubToken;
 }
 
 export function getOrInitReserveParamsHistoryItem(
-  id: Bytes,
+  id: string,
   reserve: Reserve
 ): ReserveParamsHistoryItem {
-  let itemId = id.toHexString() + reserve.id;
-  let reserveParamsHistoryItem = ReserveParamsHistoryItem.load(itemId);
+  let reserveParamsHistoryItem = ReserveParamsHistoryItem.load(id);
   if (!reserveParamsHistoryItem) {
-    reserveParamsHistoryItem = new ReserveParamsHistoryItem(itemId);
+    reserveParamsHistoryItem = new ReserveParamsHistoryItem(id);
     reserveParamsHistoryItem.variableBorrowRate = zeroBI();
     reserveParamsHistoryItem.variableBorrowIndex = zeroBI();
     reserveParamsHistoryItem.utilizationRate = zeroBD();
@@ -321,6 +273,7 @@ export function getOrInitReserveParamsHistoryItem(
     reserveParamsHistoryItem.liquidityIndex = zeroBI();
     reserveParamsHistoryItem.liquidityRate = zeroBI();
     reserveParamsHistoryItem.totalLiquidity = zeroBI();
+    reserveParamsHistoryItem.accruedToTreasury = zeroBI();
     reserveParamsHistoryItem.totalATokenSupply = zeroBI();
     reserveParamsHistoryItem.availableLiquidity = zeroBI();
     reserveParamsHistoryItem.totalLiquidityAsCollateral = zeroBI();
@@ -340,8 +293,12 @@ export function getOrInitReserveParamsHistoryItem(
     reserveParamsHistoryItem.lifetimeLiquidated = zeroBI();
     reserveParamsHistoryItem.lifetimeFlashLoans = zeroBI();
     reserveParamsHistoryItem.lifetimeFlashLoanPremium = zeroBI();
+    reserveParamsHistoryItem.lifetimeFlashLoanLPPremium = zeroBI();
+    reserveParamsHistoryItem.lifetimeFlashLoanProtocolPremium = zeroBI();
     reserveParamsHistoryItem.lifetimeReserveFactorAccrued = zeroBI();
-    reserveParamsHistoryItem.lifetimeDepositorsInterestEarned = zeroBI();
+    reserveParamsHistoryItem.lifetimeSuppliersInterestEarned = zeroBI();
+    reserveParamsHistoryItem.lifetimePortalLPFee = zeroBI();
+    reserveParamsHistoryItem.lifetimePortalProtocolFee = zeroBI();
     // reserveParamsHistoryItem.lifetimeStableDebFeeCollected = zeroBI();
     // reserveParamsHistoryItem.lifetimeVariableDebtFeeCollected = zeroBI();
   }
@@ -390,3 +347,64 @@ export function createMapContractToPool(_contractAddress: Bytes, pool: string): 
   contractToPoolMapping.pool = pool;
   contractToPoolMapping.save();
 }
+
+// export function getOrInitGhoFlashMinter(contractAddress: Address): GhoFlashMinter {
+//   const contractAddressHex = contractAddress.toHexString();
+//   let ghoFlashMinter = GhoFlashMinter.load(contractAddressHex);
+//   if (!ghoFlashMinter) {
+//     let flashMinterFacilitator = Facilitator.load(contractAddressHex);
+//     if (!flashMinterFacilitator) {
+//       flashMinterFacilitator = new Facilitator(contractAddressHex);
+//       flashMinterFacilitator.bucketCapacity = zeroBI();
+//       flashMinterFacilitator.bucketLevel = zeroBI();
+//       flashMinterFacilitator.label = '';
+//       flashMinterFacilitator.lifetimeFeesDistributedToTreasury = zeroBI();
+//       flashMinterFacilitator.save();
+//     }
+//     const ghoFlashMinterContract = GhoFlashMinterContract.bind(contractAddress);
+//     const maxFee = ghoFlashMinterContract.MAX_FEE();
+//     const fee = ghoFlashMinterContract.getFee();
+
+//     ghoFlashMinter = new GhoFlashMinter(contractAddressHex);
+//     ghoFlashMinter.fee = fee;
+//     ghoFlashMinter.maxFee = maxFee;
+//     ghoFlashMinter.facilitator = flashMinterFacilitator.id;
+//     ghoFlashMinter.save();
+//   }
+//   return ghoFlashMinter as GhoFlashMinter;
+// }
+
+// export function updateOrInitGhoDiscount(contractAddress: Address): GhoDiscount {
+//   let ghoDiscount = GhoDiscount.load('1');
+//   if (!ghoDiscount) {
+//     ghoDiscount = new GhoDiscount('1');
+//   }
+//   const discountStrategyContract = GhoDiscountRateStrategy.bind(contractAddress);
+//   ghoDiscount.discountToken = zeroAddress();
+//   const discountRate = discountStrategyContract.try_DISCOUNT_RATE();
+//   if (!discountRate.reverted) {
+//     ghoDiscount.discountRate = discountRate.value;
+//   } else {
+//     ghoDiscount.discountRate = zeroBI();
+//   }
+//   const ghoDiscountedPerDiscountToken = discountStrategyContract.try_GHO_DISCOUNTED_PER_DISCOUNT_TOKEN();
+//   if (!ghoDiscountedPerDiscountToken.reverted) {
+//     ghoDiscount.ghoDiscountedPerDiscountToken = ghoDiscountedPerDiscountToken.value;
+//   } else {
+//     ghoDiscount.ghoDiscountedPerDiscountToken = zeroBI();
+//   }
+//   const minDebtTokenBalance = discountStrategyContract.try_MIN_DEBT_TOKEN_BALANCE();
+//   if (!minDebtTokenBalance.reverted) {
+//     ghoDiscount.minDebtTokenBalance = minDebtTokenBalance.value;
+//   } else {
+//     ghoDiscount.minDebtTokenBalance = zeroBI();
+//   }
+//   const minDiscountTokenBalance = discountStrategyContract.try_MIN_DISCOUNT_TOKEN_BALANCE();
+//   if (!minDiscountTokenBalance.reverted) {
+//     ghoDiscount.minDiscountTokenBalance = minDiscountTokenBalance.value;
+//   } else {
+//     ghoDiscount.minDiscountTokenBalance = zeroBI();
+//   }
+//   ghoDiscount.save();
+//   return ghoDiscount;
+// }

@@ -3,13 +3,17 @@
   "version": "1.0.0",
   "description": "This package contains subgraphs of the Aave protocol v2",
   "scripts": {
-    "generate:schema": "cp ./schemas/${VERSION}.schema.graphql  schema.graphql",
-    "prepare:subgraph": "mustache ./config/${NETWORK}-${VERSION}.json ./templates/${BLOCKCHAIN}.subgraph.template.yaml > subgraph.yaml && rm -rf generated && npm run generate:schema && npm run subgraph:codegen && npm run subgraph:build",
+    "generate:schema": "cp ./schemas/${VERSION}.schema.graphql schema.graphql",
+    "prepare:subgraph": "mustache ./config/${NETWORK}-${BRANCH}.json ./templates/${BLOCKCHAIN}.subgraph.template.yaml > subgraph.yaml && rm -rf generated && npm run generate:schema && npm run subgraph:codegen && npm run subgraph:build",
     "subgraph:codegen": "graph codegen --output-dir ./generated",
     "subgraph:build": "graph build",
-    "test": "VERSION=v2 BLOCKCHAIN=gnosis NETWORK=gnosis env-cmd npm run prepare:subgraph",
-    "subgraph:deploy:hosted": "graph deploy $SLUG --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/ --access-token $ACCESS_TOKEN",
-    "deploy:hosted:gnosis": "VERSION=v2 BLOCKCHAIN=gnosis NETWORK=gnosis env-cmd npm run prepare:subgraph && SLUG=realtoken-thegraph/rmm-realt-v2 env-cmd npm run subgraph:deploy:hosted"
+    "test": "BRANCH=prod VERSION=v2 BLOCKCHAIN=gnosis NETWORK=gnosis env-cmd npm run prepare:subgraph",
+    "subgraph:deploy:hosted": "graph deploy $SLUG --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/",
+    "subgraph:deploy:sepolia": "graph deploy --studio rmm-v3-fork",
+    "subgraph:deploy:sepolia:staging": "graph deploy --studio rmm-v3-fork-staging",
+    "deploy:hosted:gnosis": "BRANCH=prod VERSION=v2 BLOCKCHAIN=gnosis NETWORK=gnosis env-cmd npm run prepare:subgraph && SLUG=realtoken-thegraph/rmm-realt-v2 env-cmd npm run subgraph:deploy:hosted",
+    "deploy:sepolia": "BRANCH=dev VERSION=v3 BLOCKCHAIN=sepolia NETWORK=sepolia env-cmd npm run prepare:subgraph && env-cmd npm run subgraph:deploy:sepolia",
+    "deploy:sepolia:staging": "BRANCH=staging VERSION=v3 BLOCKCHAIN=sepolia NETWORK=sepolia env-cmd npm run prepare:subgraph && env-cmd npm run subgraph:deploy:sepolia:staging"
   },
   "repository": {
     "type": "git",
@@ -36,10 +40,10 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@graphprotocol/graph-cli": "0.25.1",
-    "@graphprotocol/graph-ts": "0.24.1",
+    "@graphprotocol/graph-cli": "0.55.0",
+    "@graphprotocol/graph-ts": "0.31.0",
     "env-cmd": "^10.1.0",
-    "mustache": "^3.1.0",
+    "mustache": "^4.2.0",
     "typescript": "3.5.3",
     "@typescript-eslint/eslint-plugin": "^2.0.0",
     "@typescript-eslint/parser": "^2.0.0",

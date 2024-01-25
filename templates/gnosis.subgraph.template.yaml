@@ -9,11 +9,11 @@ dataSources:
   # --------------------------------------
   - name: AdminUpgradeabilityProxy
     kind: ethereum/contract
-    network: xdai
+    network: {{network}}
     source:
       abi: AdminUpgradeabilityProxy
-      address: "0xa17950c9910e28cae535f43d0c87a6c6cb2f5216"
-      startBlock: 11720224
+      address: '{{InitializerAddress}}'
+      startBlock: {{InitializerStartBlock}}
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -30,38 +30,38 @@ dataSources:
   # --------------------------------------
   #      ORACLES / PRICE PROVIDERS
   # --------------------------------------
-  # - kind: ethereum/contract
-  #   name: AaveOracle
-  #   network: {{network}}
-  #   source:
-  #     address: '{{AaveOracleAddress}}'
-  #     startBlock: {{AaveOracleStartBlock}}
-  #     abi: AaveOracle
-  #   mapping:
-  #     kind: ethereum/events
-  #     apiVersion: 0.0.6
-  #     language: wasm/assemblyscript
-  #     entities:
-  #       - ChainlinkAggregator
-  #       - PriceOracle
-  #       - PriceOracleAsset
-  #     abis:
-  #       - name: AaveOracle
-  #         file: ./abis/v2/AaveOracle.json
-  #       - name: GenericOracleI
-  #         file: ./abis/v2/GenericOracleI.json
-  #       - name: IExtendedPriceAggregator
-  #         file: ./abis/helpers/IExtendedPriceAggregator.json
-  #       - name: EACAggregatorProxy
-  #         file: ./abis/helpers/EACAggregatorProxy.json
-  #     eventHandlers:
-  #       - event: AssetSourceUpdated(indexed address,indexed address)
-  #         handler: handleAssetSourceUpdated
-  #       - event: FallbackOracleUpdated(indexed address)
-  #         handler: handleFallbackOracleUpdated
-  #       - event: WethSet(indexed address)
-  #         handler: handleWethSet
-  #     file: src/mapping/proxy-price-provider/gnosis.ts
+  - kind: ethereum/contract
+    name: AaveOracle
+    network: {{network}}
+    source:
+      address: '{{AaveOracleAddress}}'
+      startBlock: {{AaveOracleStartBlock}}
+      abi: AaveOracle
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - ChainlinkAggregator
+        - PriceOracle
+        - PriceOracleAsset
+      abis:
+        - name: AaveOracle
+          file: ./abis/v2/AaveOracle.json
+        - name: GenericOracleI
+          file: ./abis/v2/GenericOracleI.json
+        - name: IExtendedPriceAggregator
+          file: ./abis/helpers/IExtendedPriceAggregator.json
+        - name: EACAggregatorProxy
+          file: ./abis/helpers/EACAggregatorProxy.json
+      eventHandlers:
+        - event: AssetSourceUpdated(indexed address,indexed address)
+          handler: handleAssetSourceUpdated
+        # - event: FallbackOracleUpdated(indexed address)
+        #   handler: handleFallbackOracleUpdated
+        # - event: WethSet(indexed address)
+        #   handler: handleWethSet
+      file: src/mapping/proxy-price-provider/gnosis.ts
   # --------------------------------------
   #           CONFIGURATIONS
   # --------------------------------------
@@ -88,7 +88,7 @@ dataSources:
           handler: handleAddressesProviderUnregistered
       file: src/mapping/address-provider-registry/address-provider-registry.ts
   # --------------------------------------
-      #             CHAINLINK
+  #             CHAINLINK
   # --------------------------------------
   # - kind: ethereum/contract
   #   name: ChainlinkSourcesRegistry
@@ -112,6 +112,8 @@ dataSources:
   #         file: ./abis/v2/GenericOracleI.json
   #       - name: IExtendedPriceAggregator
   #         file: ./abis/helpers/IExtendedPriceAggregator.json
+  #       - name: EACAggregatorProxy
+  #         file: ./abis/helpers/EACAggregatorProxy.json
   #     eventHandlers:
   #       - event: AggregatorUpdated(address,address)
   #         handler: handleChainlinkAggregatorUpdated
@@ -160,50 +162,52 @@ templates:
   # --------------------------------------
   #      ORACLES / PRICE PROVIDERS
   # --------------------------------------
-  # - kind: ethereum/contract
-  #   name: FallbackPriceOracle
-  #   network: {{network}}
-  #   source:
-  #     abi: GenericOracleI
-  #   mapping:
-  #     kind: ethereum/events
-  #     apiVersion: 0.0.6
-  #     language: wasm/assemblyscript
-  #     entities:
-  #       - PriceOracle
-  #       - PriceOracleReserve
-  #     abis:
-  #       - name: GenericOracleI
-  #         file: ./abis/v2/GenericOracleI.json
-  #     eventHandlers:
-  #       - event: AssetPriceUpdated(address,uint256,uint256)
-  #         handler: handleAssetPriceUpdated
-  #       - event: EthPriceUpdated(uint256,uint256)
-  #         handler: handleEthPriceUpdated
-  #       - event: ProphecySubmitted(indexed address,indexed address,uint96,uint96)
-  #         handler: handleProphecySubmitted
-  #     file: src/mapping/price-oracle/price-oracle.ts
+  - kind: ethereum/contract
+    name: FallbackPriceOracle
+    network: {{network}}
+    source:
+      abi: GenericOracleI
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - PriceOracle
+        - PriceOracleReserve
+      abis:
+        - name: GenericOracleI
+          file: ./abis/v2/GenericOracleI.json
+      eventHandlers:
+        - event: AssetPriceUpdated(address,uint256,uint256)
+          handler: handleAssetPriceUpdated
+        - event: EthPriceUpdated(uint256,uint256)
+          handler: handleEthPriceUpdated
+        - event: ProphecySubmitted(indexed address,indexed address,uint96,uint96)
+          handler: handleProphecySubmitted
+      file: src/mapping/price-oracle/price-oracle.ts
 
-  # - kind: ethereum/contract
-  #   name: ChainlinkAggregator
-  #   network: {{network}}
-  #   source:
-  #     abi: IExtendedPriceAggregator
-  #   mapping:
-  #     kind: ethereum/events
-  #     apiVersion: 0.0.6
-  #     language: wasm/assemblyscript
-  #     entities:
-  #       - PriceOracleReserve
-  #     abis:
-  #       - name: IExtendedPriceAggregator
-  #         file: ./abis/helpers/IExtendedPriceAggregator.json
-  #       - name: AaveOracle
-  #         file: ./abis/v2/AaveOracle.json
-  #     eventHandlers:
-  #       - event: AnswerUpdated(indexed int256,indexed uint256,uint256)
-  #         handler: handleChainlinkAnswerUpdated
-  #     file: src/mapping/price-oracle/price-oracle.ts
+  - kind: ethereum/contract
+    name: ChainlinkAggregator
+    network: {{network}}
+    source:
+      abi: IExtendedPriceAggregator
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - PriceOracleReserve
+      abis:
+        - name: IExtendedPriceAggregator
+          file: ./abis/helpers/IExtendedPriceAggregator.json
+        - name: AaveOracle
+          file: ./abis/v2/AaveOracle.json
+      eventHandlers:
+        - event: AnswerUpdated(indexed int256,indexed uint256,uint256)
+          handler: handleChainlinkAnswerUpdated
+        - event: PriceUpdated(indexed uint256)
+          handler: handlePriceUpdated
+      file: src/mapping/price-oracle/price-oracle.ts
 
   # --------------------------------------
   #      AToken / Stable / Variable
