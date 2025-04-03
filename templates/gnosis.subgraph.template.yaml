@@ -9,7 +9,7 @@ dataSources:
   # --------------------------------------
   - name: AdminUpgradeabilityProxy
     kind: ethereum/contract
-    network: xdai
+    network: gnosis
     source:
       abi: AdminUpgradeabilityProxy
       address: "0xa17950c9910e28cae535f43d0c87a6c6cb2f5216"
